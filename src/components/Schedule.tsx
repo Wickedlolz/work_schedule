@@ -118,7 +118,9 @@ const SchedulePage = () => {
             onChange={(e) => setNewName(e.target.value)}
             className="w-[200px]"
           />
-          <Button onClick={addEmployee}>Add Employee</Button>
+          <Button onClick={addEmployee} className="cursor-pointer">
+            Add Employee
+          </Button>
         </div>
         <Button
           onClick={() => exportToExcel(employees, days, monthLabel)}
