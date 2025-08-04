@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import type { Employee, ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const defaultEmployees: Employee[] = [
   { id: "1", name: "Alice Johnson", shifts: {} },
@@ -18,7 +18,7 @@ const SchedulePage = () => {
     "work-schedule",
     defaultEmployees
   );
-  const [monthOffset, setMonthOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState<number>(0);
   const [newName, setNewName] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
@@ -67,7 +67,7 @@ const SchedulePage = () => {
   return (
     <main className="w-full max-w-screen overflow-x-auto px-2 sm:px-4">
       <h1 className="text-2xl font-semibold mb-4">
-        Kaufland Work Schedule for {monthLabel}
+        Work Schedule for {monthLabel}
       </h1>
 
       <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
