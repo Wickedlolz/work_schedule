@@ -1,8 +1,5 @@
 import { useState } from "react";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import { generateMonthDays } from "@/lib/utils";
+import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import type { Employee, ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
@@ -22,9 +19,13 @@ const SchedulePage = () => {
     defaultEmployees
   );
   const [monthOffset, setMonthOffset] = useState(0);
-  const [newName, setNewName] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [newName, setNewName] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth()
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  );
 
   const baseDate = new Date(selectedYear, selectedMonth + monthOffset, 1);
   const days = generateMonthDays(baseDate.getFullYear(), baseDate.getMonth());
@@ -61,34 +62,6 @@ const SchedulePage = () => {
     if (window.confirm("Are you sure you want to remove this employee?")) {
       setEmployees((prev) => prev.filter((e) => e.id !== id));
     }
-  };
-
-  const exportToExcel = () => {
-    const data = employees.map((emp) => {
-      const row: Record<string, string> = { Name: emp.name };
-      days.forEach((day) => {
-        row[day] = emp.shifts[day] || "Off";
-      });
-      return row;
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Schedule");
-    XLSX.writeFile(workbook, `work_schedule_${monthLabel}.xlsx`);
-  };
-
-  const exportToPDF = async () => {
-    const table = document.getElementById("schedule-table");
-    if (!table) return;
-    const canvas = await html2canvas(table);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("l", "pt", "a4");
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`work_schedule_${monthLabel}.pdf`);
   };
 
   return (
@@ -148,14 +121,14 @@ const SchedulePage = () => {
           <Button onClick={addEmployee}>Add Employee</Button>
         </div>
         <Button
-          onClick={exportToExcel}
+          onClick={() => exportToExcel(employees, days, monthLabel)}
           variant="secondary"
           className="cursor-pointer"
         >
           Export to Excel
         </Button>
         <Button
-          onClick={exportToPDF}
+          onClick={() => exportToPDF(monthLabel)}
           variant="secondary"
           className="cursor-pointer"
         >
