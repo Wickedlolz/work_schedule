@@ -29,7 +29,7 @@ const SchedulePage = () => {
 
   const baseDate = new Date(selectedYear, selectedMonth + monthOffset, 1);
   const days = generateMonthDays(baseDate.getFullYear(), baseDate.getMonth());
-  const monthLabel = baseDate.toLocaleString("default", {
+  const monthLabel = baseDate.toLocaleString("bg-BG", {
     month: "long",
     year: "numeric",
   });
@@ -65,9 +65,9 @@ const SchedulePage = () => {
   };
 
   return (
-    <main className="w-full max-w-screen overflow-x-auto px-2 sm:px-4">
-      <h1 className="text-2xl font-semibold mb-4">
-        Work Schedule for {monthLabel}
+    <section>
+      <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
+        Работен график за <span className="text-[#E13530]">{monthLabel}</span>
       </h1>
 
       <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -78,7 +78,7 @@ const SchedulePage = () => {
         >
           {Array.from({ length: 12 }, (_, i) => (
             <option key={i} value={i}>
-              {new Date(0, i).toLocaleString("default", {
+              {new Date(0, i).toLocaleString("bg-BG", {
                 month: "long",
               })}
             </option>
@@ -102,24 +102,24 @@ const SchedulePage = () => {
           onClick={() => setMonthOffset((m) => m - 1)}
           className="cursor-pointer"
         >
-          ← Previous
+          ← Предишен
         </Button>
         <Button
           variant="outline"
           onClick={() => setMonthOffset((m) => m + 1)}
           className="cursor-pointer"
         >
-          Next →
+          Следващ →
         </Button>
         <div className="flex gap-2 items-center">
           <Input
-            placeholder="Employee name"
+            placeholder="Име на служител"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="w-[200px]"
           />
           <Button onClick={addEmployee} className="cursor-pointer">
-            Add Employee
+            Добави служител
           </Button>
         </div>
         <Button
@@ -127,14 +127,14 @@ const SchedulePage = () => {
           variant="secondary"
           className="cursor-pointer"
         >
-          Export to Excel
+          Свали в Excel формат
         </Button>
         <Button
           onClick={() => exportToPDF(monthLabel)}
           variant="secondary"
           className="cursor-pointer"
         >
-          Export to PDF
+          Свали в PDF формат
         </Button>
       </div>
 
@@ -144,7 +144,7 @@ const SchedulePage = () => {
         handleShiftChange={handleShiftChange}
         removeEmployee={removeEmployee}
       />
-    </main>
+    </section>
   );
 };
 

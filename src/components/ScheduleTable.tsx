@@ -43,7 +43,7 @@ const ScheduleTable = ({
       >
         <thead className="bg-gray-100 sticky top-0 z-10">
           <tr>
-            <th className="text-left p-2 border border-gray-300">Employee</th>
+            <th className="text-left p-2 border border-gray-300">Служител</th>
             {days.map((day) => {
               const isWeekend = [0, 6].includes(new Date(day).getDay());
               return (
