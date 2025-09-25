@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
 
 const defaultEmployees: Employee[] = [
-  { id: "1", name: "Alice Johnson", shifts: {} },
-  { id: "2", name: "Bob Smith", shifts: {} },
-  { id: "3", name: "Charlie Brown", shifts: {} },
+  { id: "1", name: "Виктор", shifts: {} },
+  { id: "2", name: "Регина", shifts: {} },
+  { id: "3", name: "Дани", shifts: {} },
 ];
 
 const SchedulePage = () => {

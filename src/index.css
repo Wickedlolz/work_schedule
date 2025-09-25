@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -110,9 +111,14 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@theme {
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: "Open Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
   body {
     @apply bg-[white] text-foreground;
