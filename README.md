@@ -27,7 +27,7 @@ A mobile-friendly and printable web application for managing employee work sched
 - **TypeScript** – Type safety
 - **TailwindCSS v4** – Utility-first styling
 - **Shadcn UI** – Accessible, styled UI components
-- **html2canvas + jsPDF** – For PDF export
+- **jsPDF + jspdf-autotable** – **Robust PDF export** with manual style control
 - **xlsx** – For Excel export
 - **localStorage** – Lightweight data persistence
 
@@ -67,8 +67,8 @@ The app will be available at: [http://localhost:5173](http://localhost:5173)
 ```
 src/
 ├── components/         # UI components (Table, Dropdowns, Buttons)
-├── hooks/              # Custom localStorage hook
-├── utils/              # Date + Excel + PDF utils
+├── hooks/              # Custom Base64 fonts for jsPDF (e.g., OpenSans-Regular-normal.js)
+├── utils/              # Date + Excel + PDF utils (Handles color extraction and custom font application)
 ├── pages/              # Main Schedule view
 ├── App.tsx             # Root App
 └── main.tsx            # Entry point
@@ -91,9 +91,9 @@ You can configure this via a shared constant object or Shadcn `<Select />`.
 
 ## 📤 Exporting
 
-- **PDF**: Uses `html2canvas` and `jsPDF`
-  - Optimized layout to fit one page
-  - Ensure `oklch()` is disabled in Tailwind (see note below)
+- **PDF**: Uses **`jsPDF`** and **`jspdf-autotable`** to generate a vector PDF directly from the HTML table structure. This ensures high quality and reliably avoids CSS rendering issues.
+  - **Cyrillic Support**: Custom TTF fonts (e.g., Open Sans) are converted to Base64, registered with `jsPDF`, and manually applied in `autoTable` to ensure proper Bulgarian rendering and accurate bold/normal styling.
+  - **Weekend Styling**: The PDF utility function actively extracts the calculated background color of the weekend columns from the visible HTML table and applies it to the corresponding columns in the PDF using the `didParseCell` hook.
 - **Excel**: Export table content with employee name, shift, and dates
 
 ---
