@@ -1,23 +1,23 @@
 import { useState } from "react";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
-import type { Employee, ShiftType } from "@/lib/types";
+import type { ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
-
-const defaultEmployees: Employee[] = [
-  { id: "1", name: "Виктор", shifts: {} },
-  { id: "2", name: "Регина", shifts: {} },
-  { id: "3", name: "Дани", shifts: {} },
-];
+import { Loader2 } from "lucide-react";
 
 const SchedulePage = () => {
-  const [employees, setEmployees] = useLocalStorage<Employee[]>(
-    "work-schedule",
-    defaultEmployees
-  );
+  const {
+    employees,
+    loading,
+    error,
+    addEmployee: addEmployeeToFirebase,
+    removeEmployee: removeEmployeeFromFirebase,
+    updateShift,
+  } = useFirebaseEmployees();
+
   const [monthOffset, setMonthOffset] = useState<number>(0);
   const [newName, setNewName] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(
@@ -34,35 +34,65 @@ const SchedulePage = () => {
     year: "numeric",
   });
 
-  const handleShiftChange = (
+  const handleShiftChange = async (
     employeeId: string,
     date: string,
     newShift: ShiftType
   ) => {
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === employeeId
-          ? { ...emp, shifts: { ...emp.shifts, [date]: newShift } }
-          : emp
-      )
-    );
-  };
-
-  const addEmployee = () => {
-    if (!newName.trim()) return;
-    setEmployees((prev) => [
-      ...prev,
-      { id: Date.now().toString(), name: newName.trim(), shifts: {} },
-    ]);
-    setNewName("");
-  };
-
-  const removeEmployee = (id: string) => {
-    if (employees.length <= 1) return;
-    if (window.confirm("Are you sure you want to remove this employee?")) {
-      setEmployees((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await updateShift(employeeId, date, newShift);
+    } catch (err) {
+      console.error("Failed to update shift:", err);
     }
   };
+
+  const handleAddEmployee = async () => {
+    if (!newName.trim()) return;
+    try {
+      await addEmployeeToFirebase(newName.trim());
+      setNewName("");
+    } catch (err) {
+      console.error("Failed to add employee:", err);
+    }
+  };
+
+  const handleRemoveEmployee = async (id: string) => {
+    if (employees.length <= 1) {
+      alert("Трябва да има поне един служител в графика");
+      return;
+    }
+    if (
+      window.confirm("Сигурни ли сте, че искате да премахнете този служител?")
+    ) {
+      try {
+        await removeEmployeeFromFirebase(id);
+      } catch (err) {
+        console.error("Failed to remove employee:", err);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-[#E13530]" />
+        <span className="ml-2 text-lg">Зареждане на графика...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 text-lg mb-4">Грешка: {error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Опитайте отново
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section>
@@ -116,9 +146,10 @@ const SchedulePage = () => {
             placeholder="Име на служител"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddEmployee()}
             className="w-[200px]"
           />
-          <Button onClick={addEmployee} className="cursor-pointer">
+          <Button onClick={handleAddEmployee} className="cursor-pointer">
             Добави служител
           </Button>
         </div>
@@ -142,7 +173,7 @@ const SchedulePage = () => {
         employees={employees}
         days={days}
         handleShiftChange={handleShiftChange}
-        removeEmployee={removeEmployee}
+        removeEmployee={handleRemoveEmployee}
       />
     </section>
   );
