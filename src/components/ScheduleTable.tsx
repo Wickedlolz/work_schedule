@@ -44,7 +44,7 @@ const ScheduleTable = ({
         >
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="text-left p-2 border border-gray-300 whitespace-nowrap">
+              <th className="sticky left-0 z-20 bg-gray-100 text-left p-2 border border-gray-300 whitespace-nowrap">
                 Служител
               </th>
               {days.map((day) => {
@@ -66,7 +66,7 @@ const ScheduleTable = ({
           <tbody>
             {employees.map((emp) => (
               <tr key={emp.id} className="border-t border-gray-200">
-                <td className="p-2 border border-gray-300 font-medium text-center whitespace-nowrap">
+                <td className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap">
                   {emp.name}
                   <Button
                     size="sm"
