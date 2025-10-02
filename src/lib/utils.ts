@@ -22,14 +22,10 @@ export const generateMonthDays = (year: number, month: number) => {
   return days;
 };
 
-export const exportToPDF = (month: string) => {
+export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
   const doc = new jsPDF("l", "pt", "a4");
 
   doc.setFont("OpenSans-Regular", "normal");
-
-  const table = document.getElementById(
-    "schedule-table"
-  ) as HTMLTableElement | null;
 
   if (!table) return;
 
