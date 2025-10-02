@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import type { ShiftType } from "@/lib/types";
@@ -26,6 +26,7 @@ const SchedulePage = () => {
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
+  const tableRef = useRef<HTMLTableElement>(null);
 
   const baseDate = new Date(selectedYear, selectedMonth + monthOffset, 1);
   const days = generateMonthDays(baseDate.getFullYear(), baseDate.getMonth());
@@ -161,7 +162,7 @@ const SchedulePage = () => {
           Свали в Excel формат
         </Button>
         <Button
-          onClick={() => exportToPDF(monthLabel)}
+          onClick={() => exportToPDF(monthLabel, tableRef.current)}
           variant="secondary"
           className="cursor-pointer"
         >
@@ -174,6 +175,7 @@ const SchedulePage = () => {
         days={days}
         handleShiftChange={handleShiftChange}
         removeEmployee={handleRemoveEmployee}
+        tableRef={tableRef}
       />
     </section>
   );
