@@ -27,6 +27,7 @@ type ScheduleTableProps = {
     newShift: ShiftType
   ) => void;
   removeEmployee: (employeeId: string) => void;
+  tableRef: React.RefObject<HTMLTableElement | null>;
 };
 
 const ScheduleTable = ({
@@ -34,11 +35,13 @@ const ScheduleTable = ({
   days,
   handleShiftChange,
   removeEmployee,
+  tableRef,
 }: ScheduleTableProps) => {
   return (
     <section className="w-full">
       <div className="w-full overflow-x-auto overflow-y-hidden">
         <table
+          ref={tableRef}
           id="schedule-table"
           className="min-w-[900px] w-full border border-gray-300 text-xs sm:text-sm"
         >
