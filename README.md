@@ -2,6 +2,8 @@
 
 A mobile-friendly and printable web application for managing employee work schedules. Built with **Vite + React**, styled using **TailwindCSS v4** and **Shadcn UI**, and powered by **Firebase Firestore** for real-time data synchronization.
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/86406ffb-d1e0-4958-97e7-71bc61da5684/deploy-status)](https://app.netlify.com/projects/kfworkschedule/deploys)
+
 ---
 
 ## 📌 Features
