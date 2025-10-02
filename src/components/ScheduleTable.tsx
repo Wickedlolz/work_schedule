@@ -74,7 +74,7 @@ const ScheduleTable = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="ml-2 text-red-500"
+                    className="ml-2 text-red-500 cursor-pointer"
                     onClick={() => removeEmployee(emp.id)}
                   >
                     ✕
