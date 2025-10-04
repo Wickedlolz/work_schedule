@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import type { ShiftType } from "@/lib/types";
@@ -18,7 +18,6 @@ const SchedulePage = () => {
     updateShift,
   } = useFirebaseEmployees();
 
-  const [monthOffset, setMonthOffset] = useState<number>(0);
   const [newName, setNewName] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
@@ -28,12 +27,14 @@ const SchedulePage = () => {
   );
   const tableRef = useRef<HTMLTableElement>(null);
 
-  const baseDate = new Date(selectedYear, selectedMonth + monthOffset, 1);
-  const days = generateMonthDays(baseDate.getFullYear(), baseDate.getMonth());
-  const monthLabel = baseDate.toLocaleString("bg-BG", {
-    month: "long",
-    year: "numeric",
-  });
+  const days = generateMonthDays(selectedYear, selectedMonth);
+  const monthLabel = new Date(selectedYear, selectedMonth, 1).toLocaleString(
+    "bg-BG",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
 
   const handleShiftChange = async (
     employeeId: string,
@@ -71,6 +72,18 @@ const SchedulePage = () => {
         console.error("Failed to remove employee:", err);
       }
     }
+  };
+
+  const handlePreviousMonth = () => {
+    const newDate = new Date(selectedYear, selectedMonth - 1, 1);
+    setSelectedMonth(newDate.getMonth());
+    setSelectedYear(newDate.getFullYear());
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(selectedYear, selectedMonth + 1, 1);
+    setSelectedMonth(newDate.getMonth());
+    setSelectedYear(newDate.getFullYear());
   };
 
   if (loading) {
@@ -130,14 +143,14 @@ const SchedulePage = () => {
 
         <Button
           variant="outline"
-          onClick={() => setMonthOffset((m) => m - 1)}
+          onClick={handlePreviousMonth}
           className="cursor-pointer"
         >
           ← Предишен
         </Button>
         <Button
           variant="outline"
-          onClick={() => setMonthOffset((m) => m + 1)}
+          onClick={handleNextMonth}
           className="cursor-pointer"
         >
           Следващ →
