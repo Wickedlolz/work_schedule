@@ -222,6 +222,7 @@ The table becomes horizontally scrollable with sticky headers and controls optim
 - 📱 Progressive Web App (PWA) support
 - 🌍 Multi-language support
 - 📅 Calendar view integration
+- 🧠 Integrating Google Gemini AI
 
 ---
 
