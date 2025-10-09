@@ -1,12 +1,18 @@
 import { useRef, useState } from "react";
 import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import type { SubmitHandler } from "react-hook-form";
 import type { ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
 import { Loader2 } from "lucide-react";
+
+type Inputs = {
+  employeeName: string;
+};
 
 const SchedulePage = () => {
   const {
@@ -17,8 +23,13 @@ const SchedulePage = () => {
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
   } = useFirebaseEmployees();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<Inputs>();
 
-  const [newName, setNewName] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
@@ -44,17 +55,16 @@ const SchedulePage = () => {
     try {
       await updateShift(employeeId, date, newShift);
     } catch (err) {
-      console.error("Failed to update shift:", err);
+      console.error("Неуспешно обновяване на смяна:", err);
     }
   };
 
-  const handleAddEmployee = async () => {
-    if (!newName.trim()) return;
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
-      await addEmployeeToFirebase(newName.trim());
-      setNewName("");
+      await addEmployeeToFirebase(data.employeeName.trim());
+      reset();
     } catch (err) {
-      console.error("Failed to add employee:", err);
+      console.error("Неуспешно добавяне на служител:", err);
     }
   };
 
@@ -69,7 +79,7 @@ const SchedulePage = () => {
       try {
         await removeEmployeeFromFirebase(id);
       } catch (err) {
-        console.error("Failed to remove employee:", err);
+        console.error("Неуспешно премахване на служител:", err);
       }
     }
   };
@@ -88,23 +98,23 @@ const SchedulePage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <section className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-[#E13530]" />
         <span className="ml-2 text-lg">Зареждане на графика...</span>
-      </div>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <section className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-red-600 text-lg mb-4">Грешка: {error}</p>
           <Button onClick={() => window.location.reload()}>
             Опитайте отново
           </Button>
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -155,18 +165,27 @@ const SchedulePage = () => {
         >
           Следващ →
         </Button>
-        <div className="flex gap-2 items-center">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex gap-2 items-center"
+        >
           <Input
             placeholder="Име на служител"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddEmployee()}
+            {...register("employeeName", {
+              required: "Полето е задължително",
+              minLength: { value: 2, message: "Минимум 2 символа" },
+            })}
             className="w-[200px]"
           />
-          <Button onClick={handleAddEmployee} className="cursor-pointer">
+          {errors.employeeName && (
+            <span className="text-red-500 text-sm">
+              {errors.employeeName.message}
+            </span>
+          )}
+          <Button type="submit" className="cursor-pointer">
             Добави служител
           </Button>
-        </div>
+        </form>
         <Button
           onClick={() => exportToExcel(employees, days, monthLabel)}
           variant="secondary"
