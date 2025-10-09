@@ -118,15 +118,25 @@ const SchedulePage = () => {
 
   return (
     <section>
-      <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
+      <h1
+        className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50"
+        aria-label={`Работен график за ${monthLabel}`}
+      >
         Работен график за <span className="text-[#E13530]">{monthLabel}</span>
       </h1>
 
-      <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+      <div
+        className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4"
+        role="region"
+        aria-label="Филтри и контрол на графика"
+      >
         <select
+          id="month-select"
+          name="month"
           className="border rounded px-2 py-1"
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          aria-label="Избор на месец"
         >
           {Array.from({ length: 12 }, (_, i) => (
             <option key={i} value={i}>
@@ -138,9 +148,12 @@ const SchedulePage = () => {
         </select>
 
         <select
+          id="year-select"
+          name="year"
           className="border rounded px-2 py-1"
           value={selectedYear}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
+          aria-label="Избор на година"
         >
           {Array.from({ length: 5 }, (_, i) => (
             <option key={i} value={2023 + i}>
@@ -153,6 +166,7 @@ const SchedulePage = () => {
           variant="outline"
           onClick={handlePreviousMonth}
           className="cursor-pointer"
+          aria-label="Предишен месец"
         >
           ← Предишен
         </Button>
@@ -160,16 +174,23 @@ const SchedulePage = () => {
           variant="outline"
           onClick={handleNextMonth}
           className="cursor-pointer"
+          aria-label="Следващ месец"
         >
           Следващ →
         </Button>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
+          aria-label="Добавяне на нов служител"
         >
           <div className="flex flex-col w-full sm:w-auto">
             <Input
+              id="employeeName"
               placeholder="Име на служител"
+              aria-invalid={errors.employeeName ? "true" : "false"}
+              aria-describedby={
+                errors.employeeName ? errors.employeeName.message : undefined
+              }
               {...register("employeeName", {
                 required: "Полето е задължително",
                 minLength: { value: 2, message: "Минимум 2 символа" },
@@ -181,6 +202,8 @@ const SchedulePage = () => {
               {errors.employeeName && (
                 <motion.span
                   key="error"
+                  id="employeeName-error"
+                  role="alert"
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
@@ -193,7 +216,11 @@ const SchedulePage = () => {
             </AnimatePresence>
           </div>
 
-          <Button type="submit" className="cursor-pointer w-full sm:w-auto">
+          <Button
+            type="submit"
+            className="cursor-pointer w-full sm:w-auto"
+            aria-label="Добави служител"
+          >
             Добави служител
           </Button>
         </form>
@@ -201,6 +228,7 @@ const SchedulePage = () => {
           onClick={() => exportToExcel(employees, days, monthLabel)}
           variant="secondary"
           className="cursor-pointer"
+          aria-label="Свали графика в Excel формат"
         >
           Свали в Excel формат
         </Button>
@@ -208,6 +236,7 @@ const SchedulePage = () => {
           onClick={() => exportToPDF(monthLabel, tableRef.current)}
           variant="secondary"
           className="cursor-pointer"
+          aria-label="Свали графика в PDF формат"
         >
           Свали в PDF формат
         </Button>

@@ -55,10 +55,15 @@ const ScheduleTable = ({
           ref={tableRef}
           id="schedule-table"
           className="min-w-[900px] w-full border border-gray-300 text-xs sm:text-sm"
+          role="table"
+          aria-label="Работен график"
         >
           <thead className="bg-gray-100 sticky top-0 z-10">
-            <tr>
-              <th className="sticky left-0 z-20 bg-gray-100 text-left p-2 border border-gray-300 whitespace-nowrap">
+            <tr role="row">
+              <th
+                scope="col"
+                className="sticky left-0 z-20 bg-gray-100 text-left p-2 border border-gray-300 whitespace-nowrap"
+              >
                 Служител
               </th>
               {days.map((day) => {
@@ -70,6 +75,7 @@ const ScheduleTable = ({
                       "text-center p-1 border border-gray-300 whitespace-nowrap",
                       isWeekend && "bg-red-50"
                     )}
+                    scope="col"
                   >
                     {new Date(day).getDate()}
                   </th>
@@ -79,8 +85,11 @@ const ScheduleTable = ({
           </thead>
           <tbody>
             {employees.map((emp) => (
-              <tr key={emp.id} className="border-t border-gray-200">
-                <td className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap">
+              <tr key={emp.id} role="row" className="border-t border-gray-200">
+                <td
+                  role="cell"
+                  className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap"
+                >
                   {emp.name}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -88,11 +97,12 @@ const ScheduleTable = ({
                         size="sm"
                         variant="ghost"
                         className="ml-2 text-red-500 cursor-pointer"
+                        aria-label={`Изтриване на ${emp.name}`}
                       >
                         ✕
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent role="alertdialog" aria-modal="true">
                       <AlertDialogHeader>
                         <AlertDialogTitle>
                           Сигурни ли сте, че искате да изтриете този служител?
@@ -120,6 +130,7 @@ const ScheduleTable = ({
                   return (
                     <td
                       key={day}
+                      role="cell"
                       className={cn(
                         "border border-gray-300 p-1 text-center whitespace-nowrap",
                         isWeekend && "bg-red-50",
