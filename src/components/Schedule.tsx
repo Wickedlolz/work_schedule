@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import { useForm } from "react-hook-form";
+import { motion, AnimatePresence } from "framer-motion";
 import type { SubmitHandler } from "react-hook-form";
 import type { ShiftType } from "@/lib/types";
 
@@ -73,14 +74,11 @@ const SchedulePage = () => {
       alert("Трябва да има поне един служител в графика");
       return;
     }
-    if (
-      window.confirm("Сигурни ли сте, че искате да премахнете този служител?")
-    ) {
-      try {
-        await removeEmployeeFromFirebase(id);
-      } catch (err) {
-        console.error("Неуспешно премахване на служител:", err);
-      }
+
+    try {
+      await removeEmployeeFromFirebase(id);
+    } catch (err) {
+      console.error("Неуспешно премахване на служител:", err);
     }
   };
 
@@ -167,22 +165,35 @@ const SchedulePage = () => {
         </Button>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex gap-2 items-center"
+          className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
         >
-          <Input
-            placeholder="Име на служител"
-            {...register("employeeName", {
-              required: "Полето е задължително",
-              minLength: { value: 2, message: "Минимум 2 символа" },
-            })}
-            className="w-[200px]"
-          />
-          {errors.employeeName && (
-            <span className="text-red-500 text-sm">
-              {errors.employeeName.message}
-            </span>
-          )}
-          <Button type="submit" className="cursor-pointer">
+          <div className="flex flex-col w-full sm:w-auto">
+            <Input
+              placeholder="Име на служител"
+              {...register("employeeName", {
+                required: "Полето е задължително",
+                minLength: { value: 2, message: "Минимум 2 символа" },
+              })}
+              className="w-full sm:w-[200px]"
+            />
+
+            <AnimatePresence mode="wait">
+              {errors.employeeName && (
+                <motion.span
+                  key="error"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25 }}
+                  className="text-red-500 text-sm mt-1"
+                >
+                  {errors.employeeName.message}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <Button type="submit" className="cursor-pointer w-full sm:w-auto">
             Добави служител
           </Button>
         </form>
