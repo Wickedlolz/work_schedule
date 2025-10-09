@@ -223,6 +223,7 @@ The table becomes horizontally scrollable with sticky headers and controls optim
 - 🌍 Multi-language support
 - 📅 Calendar view integration
 - 🧠 Integrating Google Gemini AI
+- 📂 Multi-Schedule Work Planner with Firebase Integration (supports multiple schedules, switching, and Firebase persistence for each schedule)
 
 ---
 
