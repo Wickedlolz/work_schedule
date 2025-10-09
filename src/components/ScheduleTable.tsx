@@ -3,6 +3,17 @@ import type { Employee, ShiftType } from "@/lib/types";
 
 import { Button } from "./ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -71,14 +82,37 @@ const ScheduleTable = ({
               <tr key={emp.id} className="border-t border-gray-200">
                 <td className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap">
                   {emp.name}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-2 text-red-500 cursor-pointer"
-                    onClick={() => removeEmployee(emp.id)}
-                  >
-                    ✕
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-2 text-red-500 cursor-pointer"
+                      >
+                        ✕
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Сигурни ли сте, че искате да изтриете този служител?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Това действие е необратимо. След като служителят бъде
+                          изтрит, всички свързани данни с неговите смени ще
+                          бъдат премахнати от системата.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отказ</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => removeEmployee(emp.id)}
+                        >
+                          Изтрий
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </td>
                 {days.map((day) => {
                   const isWeekend = [0, 6].includes(new Date(day).getDay());
