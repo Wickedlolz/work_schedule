@@ -1,42 +1,38 @@
 import { useRef, useState } from "react";
-import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
+import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
-import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
-import type { SubmitHandler } from "react-hook-form";
 import type { ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
+import ScheduleSelector from "./ScheduleSelector";
 import { Loader2 } from "lucide-react";
-
-type Inputs = {
-  employeeName: string;
-};
 
 const SchedulePage = () => {
   const {
-    employees,
+    schedules,
+    activeSchedule,
+    activeScheduleId,
+    setActiveScheduleId,
     loading,
     error,
+    addSchedule,
+    deleteSchedule,
+    renameSchedule,
     addEmployee: addEmployeeToFirebase,
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
-  } = useFirebaseEmployees();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Inputs>();
+  } = useFirebaseSchedules();
 
+  const [newName, setNewName] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
+
   const tableRef = useRef<HTMLTableElement>(null);
 
   const days = generateMonthDays(selectedYear, selectedMonth);
@@ -56,29 +52,34 @@ const SchedulePage = () => {
     try {
       await updateShift(employeeId, date, newShift);
     } catch (err) {
-      console.error("Неуспешно обновяване на смяна:", err);
+      console.error("Failed to update shift:", err);
     }
   };
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+  const handleAddEmployee = async () => {
+    if (!newName.trim()) return;
     try {
-      await addEmployeeToFirebase(data.employeeName.trim());
-      reset();
+      await addEmployeeToFirebase(newName.trim());
+      setNewName("");
     } catch (err) {
-      console.error("Неуспешно добавяне на служител:", err);
+      console.error("Failed to add employee:", err);
     }
   };
 
   const handleRemoveEmployee = async (id: string) => {
-    if (employees.length <= 1) {
+    if (!activeSchedule) return;
+    if (activeSchedule.employees.length <= 1) {
       alert("Трябва да има поне един служител в графика");
       return;
     }
-
-    try {
-      await removeEmployeeFromFirebase(id);
-    } catch (err) {
-      console.error("Неуспешно премахване на служител:", err);
+    if (
+      window.confirm("Сигурни ли сте, че искате да премахнете този служител?")
+    ) {
+      try {
+        await removeEmployeeFromFirebase(id);
+      } catch (err) {
+        console.error("Failed to remove employee:", err);
+      }
     }
   };
 
@@ -94,161 +95,157 @@ const SchedulePage = () => {
     setSelectedYear(newDate.getFullYear());
   };
 
+  const handleAddSchedule = async (name: string) => {
+    await addSchedule(name);
+  };
+
+  const handleExportPDF = () => {
+    const scheduleName = activeSchedule?.name || "График";
+    exportToPDF(`${scheduleName} - ${monthLabel}`, tableRef.current);
+  };
+
+  const handleExportExcel = () => {
+    if (!activeSchedule) return;
+    const scheduleName = activeSchedule.name;
+    exportToExcel(
+      activeSchedule.employees,
+      days,
+      `${scheduleName} - ${monthLabel}`
+    );
+  };
+
   if (loading) {
     return (
-      <section className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-[#E13530]" />
-        <span className="ml-2 text-lg">Зареждане на графика...</span>
-      </section>
+        <span className="ml-2 text-lg">Зареждане на графици...</span>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <section className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-red-600 text-lg mb-4">Грешка: {error}</p>
           <Button onClick={() => window.location.reload()}>
             Опитайте отново
           </Button>
         </div>
-      </section>
+      </div>
+    );
+  }
+
+  if (schedules.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg mb-4">
+            Няма създадени графици. Създайте първия си график!
+          </p>
+          <Button onClick={() => handleAddSchedule("График 1")}>
+            Създай първи график
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
     <section>
-      <h1
-        className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50"
-        aria-label={`Работен график за ${monthLabel}`}
-      >
+      <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
         Работен график за <span className="text-[#E13530]">{monthLabel}</span>
       </h1>
 
-      <div
-        className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4"
-        role="region"
-        aria-label="Филтри и контрол на графика"
-      >
-        <select
-          id="month-select"
-          name="month"
-          className="border rounded px-2 py-1"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(Number(e.target.value))}
-          aria-label="Избор на месец"
-        >
-          {Array.from({ length: 12 }, (_, i) => (
-            <option key={i} value={i}>
-              {new Date(0, i).toLocaleString("bg-BG", {
-                month: "long",
-              })}
-            </option>
-          ))}
-        </select>
+      <ScheduleSelector
+        schedules={schedules}
+        activeScheduleId={activeScheduleId}
+        onScheduleChange={setActiveScheduleId}
+        onAddSchedule={handleAddSchedule}
+        onDeleteSchedule={deleteSchedule}
+        onRenameSchedule={renameSchedule}
+      />
 
-        <select
-          id="year-select"
-          name="year"
-          className="border rounded px-2 py-1"
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(Number(e.target.value))}
-          aria-label="Избор на година"
-        >
-          {Array.from({ length: 5 }, (_, i) => (
-            <option key={i} value={2023 + i}>
-              {2023 + i}
-            </option>
-          ))}
-        </select>
+      {activeSchedule && (
+        <>
+          <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <select
+              className="border rounded px-2 py-1"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i} value={i}>
+                  {new Date(0, i).toLocaleString("bg-BG", {
+                    month: "long",
+                  })}
+                </option>
+              ))}
+            </select>
 
-        <Button
-          variant="outline"
-          onClick={handlePreviousMonth}
-          className="cursor-pointer"
-          aria-label="Предишен месец"
-        >
-          ← Предишен
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleNextMonth}
-          className="cursor-pointer"
-          aria-label="Следващ месец"
-        >
-          Следващ →
-        </Button>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
-          aria-label="Добавяне на нов служител"
-        >
-          <div className="flex flex-col w-full sm:w-auto">
-            <Input
-              id="employeeName"
-              placeholder="Име на служител"
-              aria-invalid={errors.employeeName ? "true" : "false"}
-              aria-describedby={
-                errors.employeeName ? errors.employeeName.message : undefined
-              }
-              {...register("employeeName", {
-                required: "Полето е задължително",
-                minLength: { value: 2, message: "Минимум 2 символа" },
-              })}
-              className="w-full sm:w-[200px]"
-            />
+            <select
+              className="border rounded px-2 py-1"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+            >
+              {Array.from({ length: 5 }, (_, i) => (
+                <option key={i} value={2023 + i}>
+                  {2023 + i}
+                </option>
+              ))}
+            </select>
 
-            <AnimatePresence mode="wait">
-              {errors.employeeName && (
-                <motion.span
-                  key="error"
-                  id="employeeName-error"
-                  role="alert"
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.25 }}
-                  className="text-red-500 text-sm mt-1"
-                >
-                  {errors.employeeName.message}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <Button
+              variant="outline"
+              onClick={handlePreviousMonth}
+              className="cursor-pointer"
+            >
+              ← Предишен
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleNextMonth}
+              className="cursor-pointer"
+            >
+              Следващ →
+            </Button>
+            <div className="flex gap-2 items-center">
+              <Input
+                placeholder="Име на служител"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddEmployee()}
+                className="w-[200px]"
+              />
+              <Button onClick={handleAddEmployee} className="cursor-pointer">
+                Добави служител
+              </Button>
+            </div>
+            <Button
+              onClick={handleExportExcel}
+              variant="secondary"
+              className="cursor-pointer"
+            >
+              Свали в Excel формат
+            </Button>
+            <Button
+              onClick={handleExportPDF}
+              variant="secondary"
+              className="cursor-pointer"
+            >
+              Свали в PDF формат
+            </Button>
           </div>
 
-          <Button
-            type="submit"
-            className="cursor-pointer w-full sm:w-auto"
-            aria-label="Добави служител"
-          >
-            Добави служител
-          </Button>
-        </form>
-        <Button
-          onClick={() => exportToExcel(employees, days, monthLabel)}
-          variant="secondary"
-          className="cursor-pointer"
-          aria-label="Свали графика в Excel формат"
-        >
-          Свали в Excel формат
-        </Button>
-        <Button
-          onClick={() => exportToPDF(monthLabel, tableRef.current)}
-          variant="secondary"
-          className="cursor-pointer"
-          aria-label="Свали графика в PDF формат"
-        >
-          Свали в PDF формат
-        </Button>
-      </div>
-
-      <ScheduleTable
-        employees={employees}
-        days={days}
-        handleShiftChange={handleShiftChange}
-        removeEmployee={handleRemoveEmployee}
-        tableRef={tableRef}
-      />
+          <ScheduleTable
+            employees={activeSchedule.employees}
+            days={days}
+            handleShiftChange={handleShiftChange}
+            removeEmployee={handleRemoveEmployee}
+            tableRef={tableRef}
+          />
+        </>
+      )}
     </section>
   );
 };
