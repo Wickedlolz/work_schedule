@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { motion, AnimatePresence } from "framer-motion";
+import type { SubmitHandler } from "react-hook-form";
 import type { ShiftType } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
 import ScheduleSelector from "./ScheduleSelector";
 import { Loader2 } from "lucide-react";
+
+type Inputs = {
+  employeeName: string;
+};
 
 const SchedulePage = () => {
   const {
@@ -25,7 +32,13 @@ const SchedulePage = () => {
     updateShift,
   } = useFirebaseSchedules();
 
-  const [newName, setNewName] = useState<string>("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<Inputs>();
+
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
@@ -52,17 +65,16 @@ const SchedulePage = () => {
     try {
       await updateShift(employeeId, date, newShift);
     } catch (err) {
-      console.error("Failed to update shift:", err);
+      console.error("Неуспешно обновяване на смяна:", err);
     }
   };
 
-  const handleAddEmployee = async () => {
-    if (!newName.trim()) return;
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
-      await addEmployeeToFirebase(newName.trim());
-      setNewName("");
+      await addEmployeeToFirebase(data.employeeName.trim());
+      reset();
     } catch (err) {
-      console.error("Failed to add employee:", err);
+      console.error("Неуспешно добавяне на служител:", err);
     }
   };
 
@@ -72,14 +84,11 @@ const SchedulePage = () => {
       alert("Трябва да има поне един служител в графика");
       return;
     }
-    if (
-      window.confirm("Сигурни ли сте, че искате да премахнете този служител?")
-    ) {
-      try {
-        await removeEmployeeFromFirebase(id);
-      } catch (err) {
-        console.error("Failed to remove employee:", err);
-      }
+
+    try {
+      await removeEmployeeFromFirebase(id);
+    } catch (err) {
+      console.error("Неуспешно премахване на служител:", err);
     }
   };
 
@@ -209,18 +218,44 @@ const SchedulePage = () => {
             >
               Следващ →
             </Button>
-            <div className="flex gap-2 items-center">
+            <form
+              className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
+              aria-label="Добавяне на нов служител"
+              onSubmit={handleSubmit(onSubmit)}
+            >
               <Input
+                id="employeeName"
                 placeholder="Име на служител"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddEmployee()}
-                className="w-[200px]"
+                aria-invalid={errors.employeeName ? "true" : "false"}
+                aria-describedby={
+                  errors.employeeName ? errors.employeeName.message : undefined
+                }
+                {...register("employeeName", {
+                  required: "Полето е задължително",
+                  minLength: { value: 2, message: "Минимум 2 символа" },
+                })}
+                className="w-full sm:w-[200px]"
               />
-              <Button onClick={handleAddEmployee} className="cursor-pointer">
+              <AnimatePresence mode="wait">
+                {errors.employeeName && (
+                  <motion.span
+                    key="error"
+                    id="employeeName-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.25 }}
+                    className="text-red-500 text-sm mt-1"
+                  >
+                    {errors.employeeName.message}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              <Button type="submit" className="cursor-pointer">
                 Добави служител
               </Button>
-            </div>
+            </form>
             <Button
               onClick={handleExportExcel}
               variant="secondary"
