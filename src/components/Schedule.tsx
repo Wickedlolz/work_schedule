@@ -177,7 +177,7 @@ const SchedulePage = () => {
 
       {activeSchedule && (
         <>
-          <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <section className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <select
               className="border rounded px-2 py-1"
               value={selectedMonth}
@@ -270,7 +270,7 @@ const SchedulePage = () => {
             >
               Свали в PDF формат
             </Button>
-          </div>
+          </section>
 
           <ScheduleTable
             employees={activeSchedule.employees}
