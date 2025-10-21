@@ -88,7 +88,7 @@ const ScheduleSelector = ({
   };
 
   return (
-    <div className="bg-white border rounded-lg p-4 mb-4 shadow-sm">
+    <section className="bg-white border rounded-lg p-4 mb-4 shadow-sm">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end justify-between">
           <div className="flex-1 w-full sm:w-auto">
@@ -220,7 +220,7 @@ const ScheduleSelector = ({
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 
