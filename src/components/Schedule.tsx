@@ -1,20 +1,23 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
-import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
-import type { SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 import type { ShiftType } from "@/lib/types";
+import {
+  MIN_EMPLOYEES,
+  DEFAULT_LOCALE,
+  COLORS,
+  MESSAGES,
+} from "@/lib/constants";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ScheduleTable from "./ScheduleTable";
 import ScheduleSelector from "./ScheduleSelector";
-import { Loader2 } from "lucide-react";
-
-type Inputs = {
-  employeeName: string;
-};
+import { LoadingState } from "./schedule/LoadingState";
+import { ErrorState } from "./schedule/ErrorState";
+import { EmptyState } from "./schedule/EmptyState";
+import { MonthYearSelector } from "./schedule/MonthYearSelector";
+import { EmployeeForm } from "./schedule/EmployeeForm";
+import { ScheduleActions } from "./schedule/ScheduleActions";
 
 const SchedulePage = () => {
   const {
@@ -32,13 +35,7 @@ const SchedulePage = () => {
     updateShift,
   } = useFirebaseSchedules();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<Inputs>();
-
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
@@ -48,15 +45,23 @@ const SchedulePage = () => {
 
   const tableRef = useRef<HTMLTableElement>(null);
 
-  const days = generateMonthDays(selectedYear, selectedMonth);
-  const monthLabel = new Date(selectedYear, selectedMonth, 1).toLocaleString(
-    "bg-BG",
-    {
-      month: "long",
-      year: "numeric",
-    }
+  // Memoized calculations for performance
+  const days = useMemo(
+    () => generateMonthDays(selectedYear, selectedMonth),
+    [selectedYear, selectedMonth]
+  );
+  const monthLabel = useMemo(
+    () =>
+      new Date(selectedYear, selectedMonth, 1).toLocaleString(DEFAULT_LOCALE, {
+        month: "long",
+        year: "numeric",
+      }),
+    [selectedYear, selectedMonth]
   );
 
+  /**
+   * Handles shift changes with error handling and user feedback
+   */
   const handleShiftChange = async (
     employeeId: string,
     date: string,
@@ -64,34 +69,54 @@ const SchedulePage = () => {
   ) => {
     try {
       await updateShift(employeeId, date, newShift);
+      toast.success(MESSAGES.shifts.updated);
     } catch (err) {
-      console.error("Неуспешно обновяване на смяна:", err);
+      toast.error(MESSAGES.errors.shiftUpdate(err));
     }
   };
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+  /**
+   * Handles adding a new employee with validation and sanitization
+   */
+  const handleAddEmployee = async (employeeName: string) => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
-      await addEmployeeToFirebase(data.employeeName.trim());
-      reset();
+      const sanitizedEmployeeName = employeeName
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 100);
+      await addEmployeeToFirebase(sanitizedEmployeeName);
+      toast.success(MESSAGES.employee.added);
     } catch (err) {
-      console.error("Неуспешно добавяне на служител:", err);
+      toast.error(MESSAGES.errors.employeeAdd(err));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  /**
+   * Handles removing an employee with minimum employee validation
+   */
   const handleRemoveEmployee = async (id: string) => {
     if (!activeSchedule) return;
-    if (activeSchedule.employees.length <= 1) {
-      alert("Трябва да има поне един служител в графика");
+    if (activeSchedule.employees.length <= MIN_EMPLOYEES) {
+      toast.error(MESSAGES.employee.minRequired(MIN_EMPLOYEES));
       return;
     }
 
     try {
       await removeEmployeeFromFirebase(id);
+      toast.success(MESSAGES.employee.removed);
     } catch (err) {
-      console.error("Неуспешно премахване на служител:", err);
+      toast.error(MESSAGES.errors.employeeRemove(err));
     }
   };
 
+  /**
+   * Navigation handlers for month/year changes
+   */
   const handlePreviousMonth = () => {
     const newDate = new Date(selectedYear, selectedMonth - 1, 1);
     setSelectedMonth(newDate.getMonth());
@@ -104,10 +129,17 @@ const SchedulePage = () => {
     setSelectedYear(newDate.getFullYear());
   };
 
+  /**
+   * Handles adding a new schedule with user feedback
+   */
   const handleAddSchedule = async (name: string) => {
     await addSchedule(name);
+    toast.success(MESSAGES.schedule.added);
   };
 
+  /**
+   * Export handlers for PDF and Excel formats
+   */
   const handleExportPDF = () => {
     const scheduleName = activeSchedule?.name || "График";
     exportToPDF(`${scheduleName} - ${monthLabel}`, tableRef.current);
@@ -123,49 +155,42 @@ const SchedulePage = () => {
     );
   };
 
+  /**
+   * Render loading state
+   */
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#E13530]" />
-        <span className="ml-2 text-lg">Зареждане на графици...</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
+  /**
+   * Render error state with retry option
+   */
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-600 text-lg mb-4">Грешка: {error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Опитайте отново
-          </Button>
-        </div>
-      </div>
+      <ErrorState error={error} onRetry={() => window.location.reload()} />
     );
   }
 
+  /**
+   * Render empty state when no schedules exist
+   */
   if (schedules.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-gray-600 text-lg mb-4">
-            Няма създадени графици. Създайте първия си график!
-          </p>
-          <Button onClick={() => handleAddSchedule("График 1")}>
-            Създай първи график
-          </Button>
-        </div>
-      </div>
+      <EmptyState
+        onCreateSchedule={() => handleAddSchedule(MESSAGES.createFirstSchedule)}
+      />
     );
   }
 
   return (
-    <section>
+    <section className="space-y-4">
+      {/* Title Section */}
       <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
-        Работен график за <span className="text-[#E13530]">{monthLabel}</span>
+        {MESSAGES.title}{" "}
+        <span className={COLORS.PRIMARY_CLASS}>{monthLabel}</span>
       </h1>
 
+      {/* Schedule Selector */}
       <ScheduleSelector
         schedules={schedules}
         activeScheduleId={activeScheduleId}
@@ -175,103 +200,35 @@ const SchedulePage = () => {
         onRenameSchedule={renameSchedule}
       />
 
+      {/* Main Content */}
       {activeSchedule && (
         <>
-          <section className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <select
-              className="border rounded px-2 py-1"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            >
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i} value={i}>
-                  {new Date(0, i).toLocaleString("bg-BG", {
-                    month: "long",
-                  })}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="border rounded px-2 py-1"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <option key={i} value={2023 + i}>
-                  {2023 + i}
-                </option>
-              ))}
-            </select>
-
-            <Button
-              variant="outline"
-              onClick={handlePreviousMonth}
-              className="cursor-pointer"
-            >
-              ← Предишен
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleNextMonth}
-              className="cursor-pointer"
-            >
-              Следващ →
-            </Button>
-            <form
-              className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
-              aria-label="Добавяне на нов служител"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <Input
-                id="employeeName"
-                placeholder="Име на служител"
-                aria-invalid={errors.employeeName ? "true" : "false"}
-                aria-describedby={
-                  errors.employeeName ? errors.employeeName.message : undefined
-                }
-                {...register("employeeName", {
-                  required: "Полето е задължително",
-                  minLength: { value: 2, message: "Минимум 2 символа" },
-                })}
-                className="w-full sm:w-[200px]"
+          {/* Controls Section */}
+          <section className="flex flex-col flex-wrap gap-4 sm:gap-2">
+            {/* Month/Year Selectors and Navigation */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between flex-wrap">
+              <MonthYearSelector
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onMonthChange={setSelectedMonth}
+                onYearChange={setSelectedYear}
               />
-              <AnimatePresence mode="wait">
-                {errors.employeeName && (
-                  <motion.span
-                    key="error"
-                    id="employeeName-error"
-                    role="alert"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.25 }}
-                    className="text-red-500 text-sm mt-1"
-                  >
-                    {errors.employeeName.message}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              <Button type="submit" className="cursor-pointer">
-                Добави служител
-              </Button>
-            </form>
-            <Button
-              onClick={handleExportExcel}
-              variant="secondary"
-              className="cursor-pointer"
-            >
-              Свали в Excel формат
-            </Button>
-            <Button
-              onClick={handleExportPDF}
-              variant="secondary"
-              className="cursor-pointer"
-            >
-              Свали в PDF формат
-            </Button>
+              <ScheduleActions
+                onPreviousMonth={handlePreviousMonth}
+                onNextMonth={handleNextMonth}
+                onExportExcel={handleExportExcel}
+                onExportPDF={handleExportPDF}
+              />
+            </div>
+
+            {/* Employee Form */}
+            <EmployeeForm
+              onSubmit={handleAddEmployee}
+              isSubmitting={isSubmitting}
+            />
           </section>
 
+          {/* Schedule Table */}
           <ScheduleTable
             employees={activeSchedule.employees}
             days={days}
