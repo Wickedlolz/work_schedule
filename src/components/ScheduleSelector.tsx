@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Schedule } from "@/lib/types";
+import { MESSAGES, MIN_SCHEDULES } from "@/lib/constants";
 
+import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -61,8 +63,10 @@ const ScheduleSelector = ({
   const handleDelete = async () => {
     if (!activeScheduleId) return;
 
-    if (schedules.length <= 1) {
-      alert("Трябва да има поне един график!");
+    if (schedules.length <= MIN_SCHEDULES) {
+      toast.error(
+        "Неуспешно изтриване на график: Минимален брой графици " + MIN_SCHEDULES
+      );
       return;
     }
 
@@ -70,7 +74,7 @@ const ScheduleSelector = ({
       try {
         await onDeleteSchedule(activeScheduleId);
       } catch (err) {
-        console.error("Failed to delete schedule:", err);
+        toast.error(MESSAGES.errors.scheduleDeleteError(err));
       }
     }
   };
