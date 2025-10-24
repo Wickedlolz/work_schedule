@@ -1,5 +1,11 @@
 import { cn } from "@/lib/utils";
 import type { Employee, ShiftType } from "@/lib/types";
+import {
+  SHIFT_OPTIONS,
+  SHIFT_COLORS,
+  WEEKEND_DAYS,
+  SHIFT_LABELS_BG,
+} from "@/lib/constants"; //
 
 import { Button } from "./ui/button";
 import {
@@ -20,14 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-
-const shiftOptions: ShiftType[] = ["Morning", "Evening", "Night", "Off"];
-const shiftColors: Record<ShiftType, string> = {
-  Morning: "bg-yellow-100",
-  Evening: "bg-blue-100",
-  Night: "bg-purple-100",
-  Off: "bg-gray-100",
-};
 
 type ScheduleTableProps = {
   employees: Employee[];
@@ -67,7 +65,9 @@ const ScheduleTable = ({
                 Служител
               </th>
               {days.map((day) => {
-                const isWeekend = [0, 6].includes(new Date(day).getDay());
+                const isWeekend = WEEKEND_DAYS.includes(
+                  new Date(day).getDay() as 0 | 6
+                );
                 return (
                   <th
                     key={day}
@@ -125,7 +125,9 @@ const ScheduleTable = ({
                   </AlertDialog>
                 </td>
                 {days.map((day) => {
-                  const isWeekend = [0, 6].includes(new Date(day).getDay());
+                  const isWeekend = WEEKEND_DAYS.includes(
+                    new Date(day).getDay() as 0 | 6
+                  );
                   const currentShift = emp.shifts[day] || "Off";
                   return (
                     <td
@@ -134,7 +136,7 @@ const ScheduleTable = ({
                       className={cn(
                         "border border-gray-300 p-1 text-center whitespace-nowrap",
                         isWeekend && "bg-red-50",
-                        shiftColors[currentShift]
+                        SHIFT_COLORS[currentShift]
                       )}
                     >
                       <Select
@@ -143,17 +145,22 @@ const ScheduleTable = ({
                           handleShiftChange(emp.id, day, val)
                         }
                       >
-                        <SelectTrigger className="w-full text-[10px] sm:text-xs h-7 sm:h-8">
-                          <SelectValue placeholder="Select shift" />
+                        <SelectTrigger
+                          className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
+                          aria-label={`Смяна за ${emp.name} на ${new Date(
+                            day
+                          ).toLocaleDateString("bg-BG")}`}
+                        >
+                          <SelectValue placeholder="Изберете смяна" />
                         </SelectTrigger>
                         <SelectContent>
-                          {shiftOptions.map((option) => (
+                          {SHIFT_OPTIONS.map((option) => (
                             <SelectItem
                               key={option}
                               value={option}
                               className="text-xs"
                             >
-                              {option}
+                              {SHIFT_LABELS_BG[option]}
                             </SelectItem>
                           ))}
                         </SelectContent>
