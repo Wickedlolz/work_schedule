@@ -133,17 +133,25 @@ Visit: [http://localhost:5173](http://localhost:5173)
 ```
 src/
 ├── components/
-│   ├── Schedule.tsx          # Main schedule page
-│   ├── ScheduleTable.tsx     # Schedule table component
-│   ├── ScheduleSelector.tsx  # Multi-schedule selector
-│   └── ui/                   # Shadcn UI components
+│   ├── Schedule.tsx              # Main schedule page (refactored)
+│   ├── ScheduleTable.tsx         # Schedule table component
+│   ├── ScheduleSelector.tsx      # Multi-schedule selector
+│   ├── schedule/                 # Extracted schedule components
+│   │   ├── LoadingState.tsx      # Loading state component
+│   │   ├── ErrorState.tsx        # Error state component
+│   │   ├── EmptyState.tsx        # Empty state component
+│   │   ├── MonthYearSelector.tsx # Month/year selector component
+│   │   ├── EmployeeForm.tsx      # Employee form with validation
+│   │   └── ScheduleActions.tsx   # Navigation & export actions
+│   └── ui/                       # Shadcn UI components
 ├── hooks/
-│   ├── useFirebaseSchedules.ts  # Multi-schedule management
-│   └── useLocalStorage.tsx      # Legacy hook (optional)
+│   ├── useFirebaseSchedules.ts   # Multi-schedule management
+│   └── useLocalStorage.tsx       # Legacy hook (optional)
 ├── lib/
-│   ├── firebase.ts              # Firebase initialization
-│   ├── types.ts                 # TypeScript interfaces
-│   ├── utils.ts                 # Utilities (PDF, Excel, dates)
+│   ├── firebase.ts               # Firebase initialization
+│   ├── types.ts                  # TypeScript interfaces
+│   ├── utils.ts                  # Utilities (PDF, Excel, dates)
+│   ├── constants.ts              # Constants & i18n messages
 │   ├── OpenSans-Regular-normal.js
 │   └── OpenSans-Bold-normal.js
 ├── App.tsx
@@ -239,6 +247,8 @@ src/
 - Each schedule has independent employee list
 - Remove employees (minimum 1 required per schedule)
 - Employee shifts are preserved when switching schedules
+- **Form validation** with real-time error messages
+- **Input sanitization** (trim, normalize spaces, max 100 chars)
 
 ### 3. Shift Assignment
 
@@ -258,6 +268,7 @@ src/
 - **Dropdown Selectors** - Choose specific month and year
 - **Next/Previous Buttons** - Navigate through months
 - **Auto Year Adjustment** - Handles year transitions smoothly
+- **Responsive Layout** - Adapts to mobile, tablet, and desktop
 
 ### 5. Export Features
 
@@ -275,6 +286,62 @@ src/
 - Shift color coding
 - Professional borders and formatting
 - Cell alignment (centered shifts, left-aligned names)
+
+---
+
+## 🏛️ Architecture & Code Quality
+
+### Component Refactoring
+
+The main `Schedule.tsx` component has been refactored into smaller, focused components for better maintainability:
+
+#### Extracted Components
+
+1. **LoadingState.tsx** - Displays loading spinner during data fetch
+2. **ErrorState.tsx** - Shows error message with retry functionality
+3. **EmptyState.tsx** - Prompts user to create first schedule
+4. **MonthYearSelector.tsx** - Reusable month/year dropdown selectors
+5. **EmployeeForm.tsx** - Employee form with validation and error messages
+6. **ScheduleActions.tsx** - Navigation and export action buttons
+
+### Constants & Localization
+
+All hardcoded strings are centralized in `lib/constants.ts`:
+
+```typescript
+export const MESSAGES = {
+  shifts: { updated: "Смяната е обновена успешно!" },
+  employee: { added: "Служителят е добавен успешно!" },
+  schedule: { added: "Графикът е добавен успешно!" },
+  errors: {
+    /* error messages */
+  },
+  form: {
+    /* form labels */
+  },
+  export: {
+    /* export labels */
+  },
+  navigation: {
+    /* navigation labels */
+  },
+};
+
+export const COLORS = {
+  PRIMARY: "#E13530",
+  PRIMARY_CLASS: "text-[#E13530]",
+};
+```
+
+### Benefits
+
+✅ **Maintainability** - Easier to understand and modify components
+✅ **Reusability** - Extract components can be used elsewhere
+✅ **Testability** - Smaller components are easier to test
+✅ **i18n Ready** - Centralized messages for multi-language support
+✅ **Type Safety** - Full TypeScript support across all components
+✅ **Documentation** - JSDoc comments for all handler functions
+✅ **Accessibility** - aria-labels, aria-invalid for better a11y
 
 ---
 
@@ -439,7 +506,7 @@ netlify deploy --prod --dir=dist
 - [ ] 🔄 Schedule templates and duplication
 - [ ] 📅 Calendar view integration
 - [ ] 🌙 Dark mode toggle
-- [ ] 🌍 Multi-language support (EN, BG, etc.)
+- [ ] 🌍 Multi-language support (EN, BG, etc.) - _Ready with constants structure_
 - [ ] 📱 Progressive Web App (PWA)
 - [ ] 🔔 Push notifications
 - [ ] 💾 Import/Export schedules (JSON, CSV)
@@ -447,10 +514,84 @@ netlify deploy --prod --dir=dist
 - [ ] 📈 Shift conflict detection
 - [ ] ⏰ Time-based shifts (not just day-based)
 - [ ] 🧠 Integrating Google Gemini AI
+- [ ] 🧪 Unit tests for components and hooks
+- [ ] 🔄 Duplicate schedule functionality
 
 ---
 
-## 🤝 Contributing
+## � Development & Testing
+
+### Running Tests
+
+```bash
+# Unit tests (when configured)
+npm run test
+
+# Test coverage
+npm run test:coverage
+```
+
+### Development Best Practices
+
+1. **Component Structure** - Keep components focused and single-responsibility
+2. **Constants** - Use `lib/constants.ts` for all hardcoded values
+3. **Error Handling** - Use `toast` notifications for user feedback
+4. **Accessibility** - Always include aria-labels and semantic HTML
+5. **Type Safety** - Use TypeScript for all new code
+6. **Documentation** - Add JSDoc comments for complex functions
+
+### Debugging
+
+```bash
+# Enable Vite debug mode
+DEBUG=vite:* npm run dev
+
+# Check Firebase connections
+console.log(activeSchedule); // In browser console
+```
+
+---
+
+## 📋 Changelog
+
+### Latest Version - Code Refactoring & Improvements
+
+#### ✨ New Features
+
+- 🎨 Extracted UI components for better maintainability
+- 📝 Centralized constants and localization strings
+- 🔍 Enhanced error handling with user-friendly messages
+- ♿ Improved accessibility with aria-labels
+- 🎯 Input validation and sanitization for employee names
+
+#### 🏗️ Architecture Improvements
+
+- **Component Extraction**: Split large components into smaller, focused ones
+- **Constants Consolidation**: All hardcoded strings now in `lib/constants.ts`
+- **Better State Management**: Cleaner separation of concerns
+- **JSDoc Documentation**: Added comprehensive comments for functions
+
+#### 📊 Components Refactored
+
+- `Schedule.tsx` - Main component (reduced complexity)
+- `schedule/LoadingState.tsx` - New loading component
+- `schedule/ErrorState.tsx` - New error component
+- `schedule/EmptyState.tsx` - New empty state component
+- `schedule/MonthYearSelector.tsx` - New selector component
+- `schedule/EmployeeForm.tsx` - New form component
+- `schedule/ScheduleActions.tsx` - New actions component
+
+#### 🚀 Performance & Quality
+
+- Memoized expensive calculations
+- Better TypeScript type safety
+- Improved responsive design
+- Enhanced form validation
+- Better error messages and feedback
+
+---
+
+## � Contributing
 
 Contributions are welcome!
 
@@ -477,7 +618,7 @@ Made with ❤️ by [Viktor Dimitrov](https://github.com/Wickedlolz)
 ## 📞 Support
 
 - 🐛 **Issues**: [GitHub Issues](https://github.com/Wickedlolz/work-schedule/issues)
-- 📧 **Email**: your-email@example.com
+- 📧 **Email**: viktor.dimitrov.dev@gmail.com
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/Wickedlolz/work-schedule/discussions)
 
 ---
