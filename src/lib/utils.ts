@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable, { CellHookData } from "jspdf-autotable";
 import type { Employee } from "./types";
+import { WEEKEND_DAYS } from "./constants";
 import "@/lib/OpenSans-Regular-normal.js";
 import "@/lib/OpenSans-Bold-normal.js";
 
@@ -27,13 +28,16 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
 
   doc.setFont("OpenSans-Regular", "normal");
 
-  if (!table) return;
+  if (!table) {
+    console.error("Table element not found for PDF export");
+    return;
+  }
 
   autoTable(doc, {
     html: table,
     theme: "grid",
     styles: {
-      fontSize: 8,
+      fontSize: 6,
       font: "OpenSans-Regular",
       cellPadding: 3,
       lineWidth: 0.5,
@@ -71,8 +75,8 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
         const headerCell = table.querySelectorAll("thead th")[colIndex];
         const day = parseInt(headerCell?.textContent || "0", 10);
         const [monthName, year] = month.split(" ");
-        const isWeekend = [0, 6].includes(
-          new Date(`${day} ${monthName} ${year}`).getDay()
+        const isWeekend = WEEKEND_DAYS.includes(
+          new Date(`${day} ${monthName} ${year}`).getDay() as 0 | 6
         );
 
         if (isWeekend) {
