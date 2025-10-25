@@ -4,7 +4,6 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable, { CellHookData } from "jspdf-autotable";
 import type { Employee } from "./types";
-import { WEEKEND_DAYS } from "./constants";
 import "@/lib/OpenSans-Regular-normal.js";
 import "@/lib/OpenSans-Bold-normal.js";
 
@@ -55,15 +54,16 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
     },
 
     didParseCell: (data: CellHookData) => {
+      if (data.section === "head" && data.column.index > 0) {
+        // Check if header cell is a weekend
+        const headerCell = data.cell.raw as HTMLElement;
+        if (headerCell && headerCell.classList.contains("bg-red-50")) {
+          data.cell.styles.fillColor = [254, 242, 242]; // bg-red-50
+        }
+      }
+
       if (data.section === "body") {
         const colIndex = data.column.index;
-        let cellText = "";
-
-        if (data.cell.raw instanceof HTMLElement) {
-          cellText = data.cell.raw.textContent?.trim() || "";
-        } else {
-          cellText = String(data.cell.raw || "").trim();
-        }
 
         // Employee name column stays white
         if (colIndex === 0) {
@@ -71,28 +71,29 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
           return;
         }
 
-        // Weekend check (from header text)
-        const headerCell = table.querySelectorAll("thead th")[colIndex];
-        const day = parseInt(headerCell?.textContent || "0", 10);
-        const [monthName, year] = month.split(" ");
-        const isWeekend = WEEKEND_DAYS.includes(
-          new Date(`${day} ${monthName} ${year}`).getDay() as 0 | 6
-        );
+        // Get the actual cell element from the table to check its classes
+        const rowIndex = data.row.index;
+        const tableCell = table
+          .querySelectorAll("tbody tr")
+          // eslint-disable-next-line no-unexpected-multiline
+          [rowIndex]?.querySelectorAll("td")[colIndex] as HTMLElement;
 
-        if (isWeekend) {
-          data.cell.styles.fillColor = [254, 242, 242]; // Tailwind bg-red-50
-        }
+        if (tableCell) {
+          // Check for weekend background
+          if (tableCell.classList.contains("bg-red-50")) {
+            data.cell.styles.fillColor = [254, 242, 242]; // bg-red-50
+          }
 
-        // Shift color mapping with exact Tailwind values
-        const shiftColors: Record<string, [number, number, number]> = {
-          Morning: [254, 249, 195], // bg-yellow-100
-          Evening: [219, 234, 254], // bg-blue-100
-          Night: [233, 213, 255], // bg-purple-100
-          Off: [243, 244, 246], // bg-gray-100
-        };
-
-        if (shiftColors[cellText]) {
-          data.cell.styles.fillColor = shiftColors[cellText];
+          // Check for shift colors - these take precedence over weekend colors
+          if (tableCell.classList.contains("bg-yellow-100")) {
+            data.cell.styles.fillColor = [254, 249, 195]; // bg-yellow-100 - Morning
+          } else if (tableCell.classList.contains("bg-blue-100")) {
+            data.cell.styles.fillColor = [219, 234, 254]; // bg-blue-100 - Evening
+          } else if (tableCell.classList.contains("bg-purple-100")) {
+            data.cell.styles.fillColor = [243, 232, 255]; // bg-purple-100 - Night
+          } else if (tableCell.classList.contains("bg-gray-100")) {
+            data.cell.styles.fillColor = [243, 244, 246]; // bg-gray-100 - Off
+          }
         }
       }
     },
