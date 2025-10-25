@@ -34,6 +34,7 @@ export const EmployeeForm = ({ onSubmit, isSubmitting }: EmployeeFormProps) => {
     <form
       className="flex flex-col sm:flex-row sm:items-center sm:gap-2 gap-3"
       aria-label={MESSAGES.form.addEmployeeAriaLabel}
+      name={MESSAGES.form.addEmployeeAriaLabel}
       onSubmit={handleSubmit(handleFormSubmit)}
     >
       <div className="flex-1">
