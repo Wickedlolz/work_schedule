@@ -13,7 +13,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 - ✅ **Multiple Schedules** - Create and manage unlimited work schedules
 - ✅ **Schedule Management** - Add, rename, delete, and switch between schedules
 - ✅ View & edit monthly work schedules for multiple employees
-- ✅ Color-coded shift types: Morning, Evening, Night, Off
+- ✅ Color-coded shift types: Morning, Evening, Night, Off, Sick Leave, Vacation
 - ✅ Add & remove employees per schedule
 - ✅ **Real-time synchronization** with Firebase Firestore
 - ✅ Navigate across different months/years
