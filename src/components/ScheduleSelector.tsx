@@ -31,6 +31,7 @@ interface ScheduleSelectorProps {
   onAddSchedule: (name: string) => Promise<void>;
   onDeleteSchedule: (scheduleId: string) => Promise<void>;
   onRenameSchedule: (scheduleId: string, newName: string) => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const ScheduleSelector = ({
@@ -40,6 +41,7 @@ const ScheduleSelector = ({
   onAddSchedule,
   onDeleteSchedule,
   onRenameSchedule,
+  isAuthenticated,
 }: ScheduleSelectorProps) => {
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [newScheduleName, setNewScheduleName] = useState<string>("");
@@ -155,64 +157,65 @@ const ScheduleSelector = ({
             </span>
           </div>
 
-          {isAdding ? (
-            <div
-              className="flex gap-2 items-center w-full sm:w-auto"
-              role="group"
-              aria-label="Add new schedule form"
-            >
-              <Input
-                id="new-schedule-name"
-                placeholder="Име на нов график"
-                value={newScheduleName}
-                onChange={(e) => setNewScheduleName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddSchedule();
-                  if (e.key === "Escape") {
+          {isAuthenticated &&
+            (isAdding ? (
+              <div
+                className="flex gap-2 items-center w-full sm:w-auto"
+                role="group"
+                aria-label="Add new schedule form"
+              >
+                <Input
+                  id="new-schedule-name"
+                  placeholder="Име на нов график"
+                  value={newScheduleName}
+                  onChange={(e) => setNewScheduleName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddSchedule();
+                    if (e.key === "Escape") {
+                      setIsAdding(false);
+                      setNewScheduleName("");
+                    }
+                  }}
+                  className="w-full sm:w-[200px]"
+                  autoFocus
+                  aria-label="New schedule name"
+                  aria-required="true"
+                  aria-invalid={
+                    !newScheduleName.trim() && newScheduleName.length > 0
+                  }
+                />
+                <Button
+                  onClick={handleAddSchedule}
+                  size="sm"
+                  aria-label="Confirm add schedule"
+                  disabled={!newScheduleName.trim()}
+                >
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">Потвърди</span>
+                </Button>
+                <Button
+                  onClick={() => {
                     setIsAdding(false);
                     setNewScheduleName("");
-                  }
-                }}
-                className="w-full sm:w-[200px]"
-                autoFocus
-                aria-label="New schedule name"
-                aria-required="true"
-                aria-invalid={
-                  !newScheduleName.trim() && newScheduleName.length > 0
-                }
-              />
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Cancel add schedule"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">Откажи</span>
+                </Button>
+              </div>
+            ) : (
               <Button
-                onClick={handleAddSchedule}
+                onClick={() => setIsAdding(true)}
                 size="sm"
-                aria-label="Confirm add schedule"
-                disabled={!newScheduleName.trim()}
+                aria-label="Add new schedule"
               >
-                <Check className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">Потвърди</span>
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Нов график
               </Button>
-              <Button
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewScheduleName("");
-                }}
-                size="sm"
-                variant="ghost"
-                aria-label="Cancel add schedule"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">Откажи</span>
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={() => setIsAdding(true)}
-              size="sm"
-              aria-label="Add new schedule"
-            >
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-              Нов график
-            </Button>
-          )}
+            ))}
         </div>
 
         {activeScheduleId && activeSchedule && (
@@ -283,33 +286,35 @@ const ScheduleSelector = ({
                     {activeSchedule.name}
                   </span>
                 </div>
-                <div
-                  className="flex gap-2"
-                  role="group"
-                  aria-label="Schedule actions"
-                >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={startEditing}
-                    className="cursor-pointer"
-                    aria-label={`Rename schedule ${activeSchedule.name}`}
+                {isAuthenticated && (
+                  <div
+                    className="flex gap-2"
+                    role="group"
+                    aria-label="Schedule actions"
                   >
-                    <Edit2 className="h-4 w-4 mr-1" aria-hidden="true" />
-                    Преименувай
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleDelete}
-                    className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                    aria-label={`Delete schedule ${activeSchedule.name}`}
-                    disabled={schedules.length <= MIN_SCHEDULES}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
-                    Изтрий
-                  </Button>
-                </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={startEditing}
+                      className="cursor-pointer"
+                      aria-label={`Rename schedule ${activeSchedule.name}`}
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" aria-hidden="true" />
+                      Преименувай
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDelete}
+                      className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      aria-label={`Delete schedule ${activeSchedule.name}`}
+                      disabled={schedules.length <= MIN_SCHEDULES}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />
+                      Изтрий
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
