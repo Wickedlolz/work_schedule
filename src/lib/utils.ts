@@ -13,10 +13,17 @@ export function cn(...inputs: ClassValue[]) {
 
 export const generateMonthDays = (year: number, month: number) => {
   const days: string[] = [];
-  const date = new Date(year, month, 1);
+  // Use noon (12:00) to avoid timezone issues with UTC conversion
+  const date = new Date(year, month, 1, 12, 0, 0, 0);
+
   while (date.getMonth() === month) {
-    const day = date.toISOString().split("T")[0];
-    days.push(day);
+    // Format date manually to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const dateString = `${year}-${month}-${day}`;
+
+    days.push(dateString);
     date.setDate(date.getDate() + 1);
   }
   return days;
@@ -50,7 +57,8 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
     },
     bodyStyles: { textColor: [50, 50, 50] },
     columnStyles: {
-      0: { cellWidth: 80, halign: "left" },
+      0: { cellWidth: 40, halign: "left" },
+      1: { cellWidth: 30, halign: "center" }, // Working hours column
     },
 
     didParseCell: (data: CellHookData) => {
@@ -68,6 +76,14 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
         // Employee name column stays white
         if (colIndex === 0) {
           data.cell.styles.fillColor = [255, 255, 255];
+          return;
+        }
+
+        // Working hours column stays white with blue text
+        if (colIndex === 1) {
+          data.cell.styles.fillColor = [255, 255, 255];
+          data.cell.styles.textColor = [37, 99, 235]; // Blue color
+          data.cell.styles.fontStyle = "bold";
           return;
         }
 
@@ -110,7 +126,10 @@ export const exportToExcel = (
   month: string
 ) => {
   const data = employees.map((emp) => {
-    const row: Record<string, string> = { Name: emp.name };
+    const row: Record<string, string | number> = {
+      Name: emp.name,
+      "Working Hours": emp.workingHours,
+    };
     days.forEach((day) => {
       row[day] = emp.shifts[day] || "Off";
     });

@@ -13,6 +13,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 - ✅ **Multiple Schedules** - Create and manage unlimited work schedules
 - ✅ **Schedule Management** - Add, rename, delete, and switch between schedules
 - ✅ View & edit monthly work schedules for multiple employees
+- ✅ **Configurable Working Hours** - Set 4, 6, or 8 hour work days per employee
 - ✅ Color-coded shift types: Morning, Evening, Night, Off, Sick Leave, Vacation
 - ✅ Add & remove employees per schedule
 - ✅ **Real-time synchronization** with Firebase Firestore
@@ -173,6 +174,7 @@ src/
     {
       id: string,
       name: string,
+      workingHours: 4 | 6 | 8, // Configurable working hours per day
       shifts: {
         "2024-01-15": "Morning",
         "2024-01-16": "Evening",
@@ -195,6 +197,7 @@ src/
     {
       "id": "1705320000000",
       "name": "Виктор",
+      "workingHours": 8,
       "shifts": {
         "2024-01-15": "Morning",
         "2024-01-16": "Evening"
@@ -203,6 +206,7 @@ src/
     {
       "id": "1705320100000",
       "name": "Регина",
+      "workingHours": 6,
       "shifts": {
         "2024-01-15": "Night",
         "2024-01-16": "Off"
@@ -244,11 +248,13 @@ src/
 ### 2. Employee Management
 
 - Add employees with custom names
+- **Configurable Working Hours** - Select 4, 6, or 8 hour work days for each employee
 - Each schedule has independent employee list
 - Remove employees (minimum 1 required per schedule)
 - Employee shifts are preserved when switching schedules
 - **Form validation** with real-time error messages
 - **Input sanitization** (trim, normalize spaces, max 100 chars)
+- **Backward Compatibility** - Existing employees default to 8-hour days
 
 ### 3. Shift Assignment
 

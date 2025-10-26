@@ -64,6 +64,13 @@ const ScheduleTable = ({
               >
                 Служител
               </th>
+              <th
+                scope="col"
+                className="bg-gray-100 text-center p-2 border border-gray-300 whitespace-nowrap"
+                style={{ left: "auto" }}
+              >
+                Часове/ден
+              </th>
               {days.map((day) => {
                 const isWeekend = WEEKEND_DAYS.includes(
                   new Date(day).getDay() as 0 | 6
@@ -123,6 +130,12 @@ const ScheduleTable = ({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                </td>
+                <td
+                  role="cell"
+                  className="bg-white p-2 border border-gray-300 text-center whitespace-nowrap font-semibold text-blue-600"
+                >
+                  {emp.workingHours}ч
                 </td>
                 {days.map((day) => {
                   const isWeekend = WEEKEND_DAYS.includes(

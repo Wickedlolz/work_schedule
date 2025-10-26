@@ -48,6 +48,16 @@ export const MIN_EMPLOYEES = 1;
 export const MIN_SCHEDULES = 1;
 
 /**
+ * Working hours options available for employees
+ */
+export const WORKING_HOURS_OPTIONS = [4, 6, 8] as const;
+
+/**
+ * Default working hours for new employees
+ */
+export const DEFAULT_WORKING_HOURS = 8;
+
+/**
  * Color constants
  */
 export const COLORS = {
