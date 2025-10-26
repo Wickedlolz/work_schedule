@@ -9,6 +9,7 @@ import {
   COLORS,
   MESSAGES,
 } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 
 import ScheduleTable from "./ScheduleTable";
 import ScheduleSelector from "./ScheduleSelector";
@@ -18,8 +19,11 @@ import { EmptyState } from "./schedule/EmptyState";
 import { MonthYearSelector } from "./schedule/MonthYearSelector";
 import { EmployeeForm } from "./schedule/EmployeeForm";
 import { ScheduleActions } from "./schedule/ScheduleActions";
+import { LoginButton } from "./auth/LoginButton";
+import { UserMenu } from "./auth/UserMenu";
 
 const SchedulePage = () => {
+  const { user } = useAuth();
   const {
     schedules,
     activeSchedule,
@@ -187,11 +191,18 @@ const SchedulePage = () => {
 
   return (
     <section className="space-y-4">
-      {/* Title Section */}
-      <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
-        {MESSAGES.title}{" "}
-        <span className={COLORS.PRIMARY_CLASS}>{monthLabel}</span>
-      </h1>
+      {/* Title Section with Auth Button */}
+      <div className="relative text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
+        <div className="flex items-center justify-between">
+          <h1>
+            {MESSAGES.title}{" "}
+            <span className={COLORS.PRIMARY_CLASS}>{monthLabel}</span>
+          </h1>
+          <div className="flex-shrink-0">
+            {user ? <UserMenu /> : <LoginButton />}
+          </div>
+        </div>
+      </div>
 
       {/* Schedule Selector */}
       <ScheduleSelector
@@ -201,6 +212,7 @@ const SchedulePage = () => {
         onAddSchedule={handleAddSchedule}
         onDeleteSchedule={deleteSchedule}
         onRenameSchedule={renameSchedule}
+        isAuthenticated={!!user}
       />
 
       {/* Main Content */}
@@ -224,11 +236,24 @@ const SchedulePage = () => {
               />
             </div>
 
-            {/* Employee Form */}
-            <EmployeeForm
-              onSubmit={handleAddEmployee}
-              isSubmitting={isSubmitting}
-            />
+            {/* Authentication Notice */}
+            {!user && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                <p className="font-medium">👁️ Режим на преглед</p>
+                <p className="mt-1">
+                  Влезте в профила си, за да добавяте служители, променяте
+                  графици и редактирате смени.
+                </p>
+              </div>
+            )}
+
+            {/* Employee Form - Only show when authenticated */}
+            {user && (
+              <EmployeeForm
+                onSubmit={handleAddEmployee}
+                isSubmitting={isSubmitting}
+              />
+            )}
           </section>
 
           {/* Schedule Table */}
@@ -238,6 +263,7 @@ const SchedulePage = () => {
             handleShiftChange={handleShiftChange}
             removeEmployee={handleRemoveEmployee}
             tableRef={tableRef}
+            isAuthenticated={!!user}
           />
         </>
       )}
