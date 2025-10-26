@@ -5,7 +5,7 @@ import {
   SHIFT_COLORS,
   WEEKEND_DAYS,
   SHIFT_LABELS_BG,
-} from "@/lib/constants"; //
+} from "@/lib/constants";
 
 import { Button } from "./ui/button";
 import {
