@@ -2,7 +2,7 @@ import { useRef, useState, useMemo } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import { toast } from "sonner";
-import type { ShiftType } from "@/lib/types";
+import type { ShiftType, WorkingHours } from "@/lib/types";
 import {
   MIN_EMPLOYEES,
   DEFAULT_LOCALE,
@@ -78,7 +78,10 @@ const SchedulePage = () => {
   /**
    * Handles adding a new employee with validation and sanitization
    */
-  const handleAddEmployee = async (employeeName: string) => {
+  const handleAddEmployee = async (
+    employeeName: string,
+    workingHours: WorkingHours
+  ) => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
@@ -87,7 +90,7 @@ const SchedulePage = () => {
         .trim()
         .replace(/\s+/g, " ")
         .slice(0, 100);
-      await addEmployeeToFirebase(sanitizedEmployeeName);
+      await addEmployeeToFirebase(sanitizedEmployeeName, workingHours);
       toast.success(MESSAGES.employee.added);
     } catch (err) {
       toast.error(MESSAGES.errors.employeeAdd(err));
