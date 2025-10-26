@@ -37,6 +37,7 @@ type ScheduleTableProps = {
   ) => void;
   removeEmployee: (employeeId: string) => void;
   tableRef: React.RefObject<HTMLTableElement | null>;
+  isAuthenticated: boolean;
 };
 
 const ScheduleTable = ({
@@ -45,6 +46,7 @@ const ScheduleTable = ({
   handleShiftChange,
   removeEmployee,
   tableRef,
+  isAuthenticated,
 }: ScheduleTableProps) => {
   return (
     <section className="w-full">
@@ -98,38 +100,40 @@ const ScheduleTable = ({
                   className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap"
                 >
                   {emp.name}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="ml-2 text-red-500 cursor-pointer"
-                        aria-label={`Изтриване на ${emp.name}`}
-                      >
-                        ✕
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent role="alertdialog" aria-modal="true">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Сигурни ли сте, че искате да изтриете този служител?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Това действие е необратимо. След като служителят бъде
-                          изтрит, всички свързани данни с неговите смени ще
-                          бъдат премахнати от системата.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Отказ</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => removeEmployee(emp.id)}
+                  {isAuthenticated && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2 text-red-500 cursor-pointer"
+                          aria-label={`Изтриване на ${emp.name}`}
                         >
-                          Изтрий
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          ✕
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent role="alertdialog" aria-modal="true">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Сигурни ли сте, че искате да изтриете този служител?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Това действие е необратимо. След като служителят
+                            бъде изтрит, всички свързани данни с неговите смени
+                            ще бъдат премахнати от системата.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Отказ</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => removeEmployee(emp.id)}
+                          >
+                            Изтрий
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </td>
                 <td
                   role="cell"
@@ -152,32 +156,38 @@ const ScheduleTable = ({
                         SHIFT_COLORS[currentShift]
                       )}
                     >
-                      <Select
-                        value={currentShift}
-                        onValueChange={(val: ShiftType) =>
-                          handleShiftChange(emp.id, day, val)
-                        }
-                      >
-                        <SelectTrigger
-                          className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
-                          aria-label={`Смяна за ${emp.name} на ${new Date(
-                            day
-                          ).toLocaleDateString("bg-BG")}`}
+                      {isAuthenticated ? (
+                        <Select
+                          value={currentShift}
+                          onValueChange={(val: ShiftType) =>
+                            handleShiftChange(emp.id, day, val)
+                          }
                         >
-                          <SelectValue placeholder="Изберете смяна" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SHIFT_OPTIONS.map((option) => (
-                            <SelectItem
-                              key={option}
-                              value={option}
-                              className="text-xs"
-                            >
-                              {SHIFT_LABELS_BG[option]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectTrigger
+                            className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
+                            aria-label={`Смяна за ${emp.name} на ${new Date(
+                              day
+                            ).toLocaleDateString("bg-BG")}`}
+                          >
+                            <SelectValue placeholder="Изберете смяна" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SHIFT_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option}
+                                value={option}
+                                className="text-xs"
+                              >
+                                {SHIFT_LABELS_BG[option]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs sm:text-sm">
+                          {SHIFT_LABELS_BG[currentShift]}
+                        </span>
+                      )}
                     </td>
                   );
                 })}
