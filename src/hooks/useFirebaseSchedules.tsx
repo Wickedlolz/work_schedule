@@ -10,7 +10,8 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Schedule, Employee, ShiftType } from "@/lib/types";
+import type { Schedule, Employee, ShiftType, WorkingHours } from "@/lib/types";
+import { DEFAULT_WORKING_HOURS } from "@/lib/constants";
 
 export function useFirebaseSchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -27,9 +28,17 @@ export function useFirebaseSchedules() {
       (snapshot) => {
         const scheduleData: Schedule[] = [];
         snapshot.forEach((doc) => {
+          const data = doc.data();
+          // Ensure backward compatibility: add default workingHours to employees that don't have it
+          const employees = (data.employees || []).map((emp: Employee) => ({
+            ...emp,
+            workingHours: emp.workingHours || DEFAULT_WORKING_HOURS,
+          }));
+
           scheduleData.push({
             id: doc.id,
-            ...doc.data(),
+            ...data,
+            employees,
           } as Schedule);
         });
 
@@ -107,13 +116,17 @@ export function useFirebaseSchedules() {
   };
 
   // Add employee to active schedule
-  const addEmployee = async (name: string) => {
+  const addEmployee = async (
+    name: string,
+    workingHours: WorkingHours = DEFAULT_WORKING_HOURS
+  ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
     try {
       const newEmployee: Employee = {
         id: Date.now().toString(),
         name,
+        workingHours,
         shifts: {},
       };
 
