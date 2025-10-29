@@ -8,6 +8,7 @@ export const SHIFT_OPTIONS = [
   "Off",
   "Sick Leave",
   "Vacation",
+  "Custom",
 ] as const;
 
 /**
@@ -18,6 +19,7 @@ export const SHIFT_COLORS = {
   Evening: "bg-blue-100",
   Night: "bg-purple-100",
   Off: "bg-gray-100",
+  Custom: "bg-green-100",
 } as const;
 
 /**
@@ -30,6 +32,7 @@ export const SHIFT_LABELS_BG = {
   Off: "Почивка",
   "Sick Leave": "Болничен",
   Vacation: "Отпуск",
+  Custom: "Персонализирана",
 } as const;
 
 /**
