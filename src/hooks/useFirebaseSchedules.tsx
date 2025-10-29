@@ -10,7 +10,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Schedule, Employee, ShiftType, WorkingHours } from "@/lib/types";
+import type { Schedule, Employee, ShiftValue, WorkingHours } from "@/lib/types";
 import { DEFAULT_WORKING_HOURS } from "@/lib/constants";
 
 export function useFirebaseSchedules() {
@@ -169,7 +169,7 @@ export function useFirebaseSchedules() {
   const updateShift = async (
     employeeId: string,
     date: string,
-    shift: ShiftType
+    shift: ShiftValue
   ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
