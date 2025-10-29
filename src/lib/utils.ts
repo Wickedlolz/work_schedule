@@ -3,13 +3,24 @@ import { twMerge } from "tailwind-merge";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable, { CellHookData } from "jspdf-autotable";
-import type { Employee } from "./types";
+import type { Employee, ShiftValue } from "./types";
 import "@/lib/OpenSans-Regular-normal.js";
 import "@/lib/OpenSans-Bold-normal.js";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Helper function to get shift display text
+ */
+export const getShiftDisplayText = (shift: ShiftValue | undefined): string => {
+  if (!shift) return "Off";
+  if (typeof shift === "object" && shift.type === "Custom") {
+    return `${shift.startTime}-${shift.endTime}`;
+  }
+  return shift as string;
+};
 
 export const generateMonthDays = (year: number, month: number) => {
   const days: string[] = [];
@@ -109,6 +120,8 @@ export const exportToPDF = (month: string, table: HTMLTableElement | null) => {
             data.cell.styles.fillColor = [243, 232, 255]; // bg-purple-100 - Night
           } else if (tableCell.classList.contains("bg-gray-100")) {
             data.cell.styles.fillColor = [243, 244, 246]; // bg-gray-100 - Off
+          } else if (tableCell.classList.contains("bg-green-100")) {
+            data.cell.styles.fillColor = [220, 252, 231]; // bg-green-100 - Custom
           }
         }
       }
@@ -131,7 +144,7 @@ export const exportToExcel = (
       "Working Hours": emp.workingHours,
     };
     days.forEach((day) => {
-      row[day] = emp.shifts[day] || "Off";
+      row[day] = getShiftDisplayText(emp.shifts[day]);
     });
     return row;
   });
