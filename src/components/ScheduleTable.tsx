@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { cn, calculateEmployeeWorkHours } from "@/lib/utils";
+import { useState, useMemo } from "react";
+import {
+  cn,
+  calculateEmployeeWorkHours,
+  getBulgarianHolidays,
+} from "@/lib/utils";
 import type { Employee, ShiftType, ShiftValue, CustomShift } from "@/lib/types";
 import {
   SHIFT_OPTIONS,
@@ -50,6 +54,13 @@ const ScheduleTable = ({
   tableRef,
   isAuthenticated,
 }: ScheduleTableProps) => {
+  // Calculate holidays once for the current month/year
+  const holidays = useMemo(() => {
+    if (days.length === 0) return new Set<string>();
+    const year = new Date(days[0]).getFullYear();
+    return new Set(getBulgarianHolidays(year));
+  }, [days]);
+
   const [customShiftModal, setCustomShiftModal] = useState<{
     open: boolean;
     employeeId: string;
@@ -153,12 +164,14 @@ const ScheduleTable = ({
                 const isWeekend = WEEKEND_DAYS.includes(
                   new Date(day).getDay() as 0 | 6
                 );
+                const isHoliday = holidays.has(day);
+                const isRedDay = isWeekend || isHoliday;
                 return (
                   <th
                     key={day}
                     className={cn(
                       "text-center p-1 border border-gray-300 whitespace-nowrap",
-                      isWeekend && "bg-red-50"
+                      isRedDay && "bg-red-100"
                     )}
                     scope="col"
                   >
@@ -241,6 +254,8 @@ const ScheduleTable = ({
                     const isWeekend = WEEKEND_DAYS.includes(
                       new Date(day).getDay() as 0 | 6
                     );
+                    const isHoliday = holidays.has(day);
+                    const isRedDay = isWeekend || isHoliday;
                     const currentShift = emp.shifts[day] || "Off";
                     return (
                       <td
@@ -248,7 +263,7 @@ const ScheduleTable = ({
                         role="cell"
                         className={cn(
                           "border border-gray-300 p-1 text-center whitespace-nowrap",
-                          isWeekend && "bg-red-50",
+                          isRedDay && "bg-red-50",
                           getShiftColor(currentShift)
                         )}
                       >

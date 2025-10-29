@@ -37,6 +37,92 @@ export const calculateCustomShiftHours = (customShift: {
 };
 
 /**
+ * Get Bulgarian national holidays for a specific year
+ * Returns array of dates in "YYYY-MM-DD" format
+ */
+export const getBulgarianHolidays = (year: number): string[] => {
+  const holidays: string[] = [];
+
+  // Fixed holidays
+  const fixedHolidays = [
+    { month: 0, day: 1 }, // New Year's Day - January 1
+    { month: 2, day: 3 }, // Liberation Day - March 3
+    { month: 4, day: 1 }, // Labour Day - May 1
+    { month: 4, day: 6 }, // St. George's Day / Bulgarian Army Day - May 6
+    { month: 4, day: 24 }, // Day of Bulgarian Education and Culture - May 24
+    { month: 8, day: 6 }, // Unification Day - September 6
+    { month: 8, day: 22 }, // Independence Day - September 22
+    { month: 11, day: 24 }, // Christmas Eve - December 24
+    { month: 11, day: 25 }, // Christmas Day - December 25
+    { month: 11, day: 26 }, // Second Day of Christmas - December 26
+  ];
+
+  fixedHolidays.forEach(({ month, day }) => {
+    const date = new Date(year, month, day, 12, 0, 0);
+    const dateString = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    holidays.push(dateString);
+  });
+
+  // Easter-based holidays (movable)
+  // Note: This is a simplified calculation. For production, consider using a library
+  // or API for accurate Easter calculation
+  const easter = calculateEaster(year);
+
+  // Good Friday (2 days before Easter)
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(goodFriday.getDate() - 2);
+  holidays.push(formatDate(goodFriday));
+
+  // Holy Saturday (1 day before Easter)
+  const holySaturday = new Date(easter);
+  holySaturday.setDate(holySaturday.getDate() - 1);
+  holidays.push(formatDate(holySaturday));
+
+  // Easter Sunday
+  holidays.push(formatDate(easter));
+
+  // Easter Monday (1 day after Easter)
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easterMonday.getDate() + 1);
+  holidays.push(formatDate(easterMonday));
+
+  return holidays;
+};
+
+/**
+ * Calculate Easter date using Meeus/Jones/Butcher algorithm
+ */
+const calculateEaster = (year: number): Date => {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
+/**
+ * Format date to YYYY-MM-DD string
+ */
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Calculate total work hours for an employee for given days
  */
 export const calculateEmployeeWorkHours = (
@@ -45,10 +131,16 @@ export const calculateEmployeeWorkHours = (
 ): { actual: number; expected: number; isOverworked: boolean } => {
   let actualHours = 0;
 
-  // Count working days (excluding weekends)
+  // Get the year from the first day to determine holidays
+  const year = new Date(days[0]).getFullYear();
+  const holidays = getBulgarianHolidays(year);
+
+  // Count working days (excluding weekends AND holidays)
   const workingDaysCount = days.filter((day) => {
     const dayOfWeek = new Date(day).getDay();
-    return dayOfWeek !== 0 && dayOfWeek !== 6; // Not Sunday (0) or Saturday (6)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isHoliday = holidays.includes(day);
+    return !isWeekend && !isHoliday;
   }).length;
 
   // Expected hours = working days in month * employee's daily hours
