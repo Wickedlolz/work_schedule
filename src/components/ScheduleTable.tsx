@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { Employee, ShiftType } from "@/lib/types";
+import type { Employee, ShiftType, ShiftValue, CustomShift } from "@/lib/types";
 import {
   SHIFT_OPTIONS,
   SHIFT_COLORS,
@@ -26,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { CustomShiftModal } from "./schedule/CustomShiftModal";
 
 type ScheduleTableProps = {
   employees: Employee[];
@@ -33,7 +35,7 @@ type ScheduleTableProps = {
   handleShiftChange: (
     employeeId: string,
     date: string,
-    newShift: ShiftType
+    newShift: ShiftValue
   ) => void;
   removeEmployee: (employeeId: string) => void;
   tableRef: React.RefObject<HTMLTableElement | null>;
@@ -48,6 +50,72 @@ const ScheduleTable = ({
   tableRef,
   isAuthenticated,
 }: ScheduleTableProps) => {
+  const [customShiftModal, setCustomShiftModal] = useState<{
+    open: boolean;
+    employeeId: string;
+    date: string;
+    existingShift?: CustomShift;
+  }>({
+    open: false,
+    employeeId: "",
+    date: "",
+  });
+
+  const handleSelectChange = (
+    employeeId: string,
+    date: string,
+    value: ShiftType
+  ) => {
+    if (value === "Custom") {
+      // Get existing custom shift if any
+      const employee = employees.find((e) => e.id === employeeId);
+      const existingShift = employee?.shifts[date];
+      const existingCustomShift =
+        existingShift && typeof existingShift === "object"
+          ? existingShift
+          : undefined;
+
+      setCustomShiftModal({
+        open: true,
+        employeeId,
+        date,
+        existingShift: existingCustomShift,
+      });
+    } else {
+      handleShiftChange(employeeId, date, value);
+    }
+  };
+
+  const handleCustomShiftSave = (customShift: CustomShift) => {
+    handleShiftChange(
+      customShiftModal.employeeId,
+      customShiftModal.date,
+      customShift
+    );
+    setCustomShiftModal({ open: false, employeeId: "", date: "" });
+  };
+
+  const getShiftDisplay = (shift: ShiftValue): string => {
+    if (typeof shift === "object" && shift.type === "Custom") {
+      return `${shift.startTime} - ${shift.endTime}`;
+    }
+    return SHIFT_LABELS_BG[shift as ShiftType] || "";
+  };
+
+  const getShiftColor = (shift: ShiftValue): string => {
+    if (typeof shift === "object" && shift.type === "Custom") {
+      return SHIFT_COLORS.Custom;
+    }
+    return SHIFT_COLORS[shift as keyof typeof SHIFT_COLORS] || "";
+  };
+
+  const getShiftValue = (shift: ShiftValue): ShiftType => {
+    if (typeof shift === "object" && shift.type === "Custom") {
+      return "Custom";
+    }
+    return shift as ShiftType;
+  };
+
   return (
     <section className="w-full">
       <div className="w-full overflow-x-auto overflow-y-hidden">
@@ -153,14 +221,14 @@ const ScheduleTable = ({
                       className={cn(
                         "border border-gray-300 p-1 text-center whitespace-nowrap",
                         isWeekend && "bg-red-50",
-                        SHIFT_COLORS[currentShift]
+                        getShiftColor(currentShift)
                       )}
                     >
                       {isAuthenticated ? (
                         <Select
-                          value={currentShift}
+                          value={getShiftValue(currentShift)}
                           onValueChange={(val: ShiftType) =>
-                            handleShiftChange(emp.id, day, val)
+                            handleSelectChange(emp.id, day, val)
                           }
                         >
                           <SelectTrigger
@@ -169,7 +237,9 @@ const ScheduleTable = ({
                               day
                             ).toLocaleDateString("bg-BG")}`}
                           >
-                            <SelectValue placeholder="Изберете смяна" />
+                            <SelectValue placeholder="Изберете смяна">
+                              {getShiftDisplay(currentShift)}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {SHIFT_OPTIONS.map((option) => (
@@ -185,7 +255,7 @@ const ScheduleTable = ({
                         </Select>
                       ) : (
                         <span className="text-xs sm:text-sm">
-                          {SHIFT_LABELS_BG[currentShift]}
+                          {getShiftDisplay(currentShift)}
                         </span>
                       )}
                     </td>
@@ -196,6 +266,16 @@ const ScheduleTable = ({
           </tbody>
         </table>
       </div>
+
+      <CustomShiftModal
+        open={customShiftModal.open}
+        onOpenChange={(open) =>
+          setCustomShiftModal((prev) => ({ ...prev, open }))
+        }
+        onSave={handleCustomShiftSave}
+        initialStartTime={customShiftModal.existingShift?.startTime}
+        initialEndTime={customShiftModal.existingShift?.endTime}
+      />
     </section>
   );
 };

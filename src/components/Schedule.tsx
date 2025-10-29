@@ -2,7 +2,7 @@ import { useRef, useState, useMemo } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import { toast } from "sonner";
-import type { ShiftType, WorkingHours } from "@/lib/types";
+import type { ShiftValue, WorkingHours } from "@/lib/types";
 import {
   MIN_EMPLOYEES,
   DEFAULT_LOCALE,
@@ -69,7 +69,7 @@ const SchedulePage = () => {
   const handleShiftChange = async (
     employeeId: string,
     date: string,
-    newShift: ShiftType
+    newShift: ShiftValue
   ) => {
     try {
       await updateShift(employeeId, date, newShift);
