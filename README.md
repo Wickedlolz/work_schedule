@@ -14,9 +14,11 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 - ✅ **Schedule Management** - Add, rename, delete, and switch between schedules
 - ✅ View & edit monthly work schedules for multiple employees
 - ✅ **Configurable Working Hours** - Set 4, 6, or 8 hour work days per employee
+- ✅ **Custom Shift Times** - Create personalized shifts with specific time ranges (e.g., 9:00-17:30)
+- ✅ **Work Hours Analytics** - View detailed monthly work hours summary with expected vs actual hours comparison
 - ✅ **Authentication & Authorization** - Secure email/password login with role-based access
 - ✅ **Read-Only Mode** - Public viewing without authentication for transparency
-- ✅ Color-coded shift types: Morning, Evening, Night, Off, Sick Leave, Vacation
+- ✅ Color-coded shift types: Morning, Evening, Night, Off, Sick Leave, Vacation, Custom
 - ✅ Add & remove employees per schedule
 - ✅ **Real-time synchronization** with Firebase Firestore
 - ✅ Navigate across different months/years
@@ -193,7 +195,8 @@ src/
 │   │   ├── EmptyState.tsx        # Empty state component
 │   │   ├── MonthYearSelector.tsx # Month/year selector component
 │   │   ├── EmployeeForm.tsx      # Employee form with validation
-│   │   └── ScheduleActions.tsx   # Navigation & export actions
+│   │   ├── ScheduleActions.tsx   # Navigation & export actions
+│   │   └── CustomShiftModal.tsx  # Custom shift time picker modal
 │   └── ui/                       # Shadcn UI components
 ├── context/
 │   └── AuthContext.tsx           # Authentication context provider
@@ -203,8 +206,8 @@ src/
 │   └── useLocalStorage.tsx       # Legacy hook (optional)
 ├── lib/
 │   ├── firebase.ts               # Firebase initialization (Firestore + Auth)
-│   ├── types.ts                  # TypeScript interfaces
-│   ├── utils.ts                  # Utilities (PDF, Excel, dates)
+│   ├── types.ts                  # TypeScript interfaces (ShiftValue, CustomShift)
+│   ├── utils.ts                  # Utilities (PDF, Excel, dates, work hours calc)
 │   ├── constants.ts              # Constants & i18n messages
 │   ├── OpenSans-Regular-normal.js
 │   └── OpenSans-Bold-normal.js
@@ -232,7 +235,12 @@ src/
         "2024-01-15": "Morning",
         "2024-01-16": "Evening",
         "2024-01-17": "Night",
-        "2024-01-18": "Off"
+        "2024-01-18": "Off",
+        "2024-01-19": {
+          type: "Custom",
+          startTime: "09:00",
+          endTime: "17:30"
+        }
       }
     }
   ],
@@ -253,7 +261,11 @@ src/
       "workingHours": 8,
       "shifts": {
         "2024-01-15": "Morning",
-        "2024-01-16": "Evening"
+        "2024-01-16": {
+          "type": "Custom",
+          "startTime": "09:00",
+          "endTime": "17:30"
+        }
       }
     },
     {
@@ -355,6 +367,18 @@ When **logged in** (Full Access):
 - 🌙 **Evening** - Blue background (#DBEAFE)
 - 🌃 **Night** - Purple background (#F3E8FF)
 - ❌ **Off** - Gray background (#F3F4F6)
+- 🏥 **Sick Leave** - No color
+- 🏖️ **Vacation** - No color
+- 🎯 **Custom** - Green background (#DCFCE7) - Personalized time range shifts
+
+**Custom Shift Feature:**
+
+- Create shifts with specific time ranges (e.g., 9:00-17:30)
+- Modal interface with time pickers for start and end times
+- Validation ensures start time is before end time
+- Displayed as time range in schedule table
+- Included in PDF and Excel exports with proper formatting
+- Hours calculated dynamically based on time range
 
 **Shift Editing:**
 
@@ -365,7 +389,36 @@ When **logged in** (Full Access):
 
 - Saturday and Sunday columns have red tinted background (#FEF2F2)
 
-### 5. Month Navigation
+### 5. Work Hours Analytics
+
+**Employee Work Hours Tracking:**
+
+- Click info icon (ℹ️) next to employee name to view detailed work hours
+- Modal displays:
+  - **Expected Hours**: Calculated based on working days in month (excluding weekends) × employee's daily hours
+  - **Actual Hours**: Sum of all worked shifts for the month
+  - **Overwork Alert**: Visual warning if actual hours exceed expected hours
+
+**Hour Calculation Rules:**
+
+- **Morning/Evening**: Uses employee's configured daily working hours (4, 6, or 8)
+- **Night Shift**: Always counts as 8 hours regardless of employee's daily hours setting
+- **Vacation**: Counts as 8 hours
+- **Custom Shifts**: Calculated from time range (e.g., 9:00-17:30 = 8.5 hours)
+- **Off/Sick Leave**: 0 hours
+- **Expected Hours**: Based on total working days in month (excluding weekends)
+  - Example: October 2025 has 23 working days
+  - 8-hour employee: 23 × 8 = 184 expected hours
+  - 6-hour employee: 23 × 6 = 138 expected hours
+  - 4-hour employee: 23 × 4 = 92 expected hours
+
+**Visual Indicators:**
+
+- Expected hours shown in gray card
+- Actual hours shown in gray (normal) or red (overworked)
+- Red alert box appears when employee exceeds expected hours
+
+### 6. Month Navigation
 
 - **Dropdown Selectors** - Choose specific month and year
 - **Next/Previous Buttons** - Navigate through months
@@ -759,6 +812,9 @@ console.log(user); // Check auth state
 - 🎯 Input validation and sanitization for employee names
 - ⏰ **Configurable Working Hours** - 4, 6, or 8 hour work days per employee
 - 🗓️ **Fixed Date Generation** - Corrected timezone issues in month display
+- 🎯 **Custom Shift Times** - Create personalized shifts with specific time ranges
+- 📊 **Work Hours Analytics** - Monthly work hours tracking with expected vs actual comparison
+- ⚠️ **Overwork Detection** - Visual alerts when employees exceed expected hours
 
 #### 🏗️ Architecture Improvements
 
@@ -768,6 +824,7 @@ console.log(user); // Check auth state
 - **JSDoc Documentation**: Added comprehensive comments for functions
 - **Auth Context Pattern**: Centralized authentication state management
 - **Protected Routes**: Conditional rendering based on auth state
+- **Type System Enhancement**: Added `CustomShift` interface and `ShiftValue` union type
 
 #### 📊 Components Added/Refactored
 
@@ -776,7 +833,7 @@ console.log(user); // Check auth state
 - `context/AuthContext.tsx` - New authentication context
 - `hooks/useAuth.tsx` - New authentication hook
 - `Schedule.tsx` - Main component (reduced complexity)
-- `ScheduleTable.tsx` - Added read-only mode
+- `ScheduleTable.tsx` - Added read-only mode, custom shifts, work hours modal
 - `ScheduleSelector.tsx` - Protected admin actions
 - `schedule/LoadingState.tsx` - New loading component
 - `schedule/ErrorState.tsx` - New error component
@@ -784,9 +841,7 @@ console.log(user); // Check auth state
 - `schedule/MonthYearSelector.tsx` - New selector component
 - `schedule/EmployeeForm.tsx` - New form component with validation
 - `schedule/ScheduleActions.tsx` - New actions component
-
-- `schedule/EmployeeForm.tsx` - New form component with validation
-- `schedule/ScheduleActions.tsx` - New actions component
+- `schedule/CustomShiftModal.tsx` - New modal for custom shift time selection
 
 #### 🚀 Performance & Quality
 
@@ -797,6 +852,8 @@ console.log(user); // Check auth state
 - Better error messages and feedback
 - Smooth animations with Framer Motion
 - Timezone-corrected date generation
+- Dynamic work hours calculation based on shift types
+- Modal-based UI for better mobile experience
 
 ---
 
