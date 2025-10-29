@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
 import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import { toast } from "sonner";
@@ -40,12 +40,28 @@ const SchedulePage = () => {
   } = useFirebaseSchedules();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth()
-  );
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
-  );
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const monthParam = params.get("month");
+    return monthParam ? parseInt(monthParam, 10) : new Date().getMonth();
+  });
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const yearParam = params.get("year");
+    return yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
+  });
+
+  // Update URL params whenever month or year changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("month", selectedMonth.toString());
+    params.set("year", selectedYear.toString());
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}?${params.toString()}`
+    );
+  }, [selectedMonth, selectedYear]);
 
   const tableRef = useRef<HTMLTableElement>(null);
 

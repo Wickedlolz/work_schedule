@@ -15,9 +15,28 @@ import { DEFAULT_WORKING_HOURS } from "@/lib/constants";
 
 export function useFirebaseSchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [activeScheduleId, setActiveScheduleId] = useState<string | null>(null);
+  const [activeScheduleId, setActiveScheduleId] = useState<string | null>(
+    () => {
+      // Initialize from URL params if available
+      const params = new URLSearchParams(window.location.search);
+      return params.get("schedule") || null;
+    }
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Update URL params whenever activeScheduleId changes
+  useEffect(() => {
+    if (activeScheduleId) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("schedule", activeScheduleId);
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}?${params.toString()}`
+      );
+    }
+  }, [activeScheduleId]);
 
   // Subscribe to schedules collection
   useEffect(() => {
