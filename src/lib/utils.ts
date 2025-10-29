@@ -22,6 +22,74 @@ export const getShiftDisplayText = (shift: ShiftValue | undefined): string => {
   return shift as string;
 };
 
+/**
+ * Calculate work hours from a custom shift
+ */
+export const calculateCustomShiftHours = (customShift: {
+  startTime: string;
+  endTime: string;
+}): number => {
+  const [startHour, startMin] = customShift.startTime.split(":").map(Number);
+  const [endHour, endMin] = customShift.endTime.split(":").map(Number);
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  return (endMinutes - startMinutes) / 60;
+};
+
+/**
+ * Calculate total work hours for an employee for given days
+ */
+export const calculateEmployeeWorkHours = (
+  employee: Employee,
+  days: string[]
+): { actual: number; expected: number; isOverworked: boolean } => {
+  let actualHours = 0;
+
+  // Count working days (excluding weekends)
+  const workingDaysCount = days.filter((day) => {
+    const dayOfWeek = new Date(day).getDay();
+    return dayOfWeek !== 0 && dayOfWeek !== 6; // Not Sunday (0) or Saturday (6)
+  }).length;
+
+  // Expected hours = working days in month * employee's daily hours
+  const expectedHours = workingDaysCount * employee.workingHours;
+
+  days.forEach((day) => {
+    const shift = employee.shifts[day];
+
+    // No shift or Off or Sick Leave = 0 hours
+    if (!shift || shift === "Off" || shift === "Sick Leave") {
+      return;
+    }
+
+    // Vacation counts as 8 hours
+    if (shift === "Vacation") {
+      actualHours += 8;
+      return;
+    }
+
+    // Night shift always counts as 8 hours
+    if (shift === "Night") {
+      actualHours += 8;
+      return;
+    }
+
+    // Custom shift - calculate from time range
+    if (typeof shift === "object" && shift.type === "Custom") {
+      actualHours += calculateCustomShiftHours(shift);
+    } else {
+      // Standard shifts (Morning, Evening) - use employee's daily working hours
+      actualHours += employee.workingHours;
+    }
+  });
+
+  return {
+    actual: Math.round(actualHours * 10) / 10, // Round to 1 decimal
+    expected: expectedHours,
+    isOverworked: actualHours > expectedHours,
+  };
+};
+
 export const generateMonthDays = (year: number, month: number) => {
   const days: string[] = [];
   // Use noon (12:00) to avoid timezone issues with UTC conversion
