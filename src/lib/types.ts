@@ -31,3 +31,15 @@ export interface Schedule {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CustomShiftModalState {
+  open: boolean;
+  employeeId: string;
+  date: string;
+  existingShift?: CustomShift;
+}
+
+export interface WorkHoursModalState {
+  open: boolean;
+  employeeId: string;
+}

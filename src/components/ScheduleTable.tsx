@@ -4,7 +4,14 @@ import {
   calculateEmployeeWorkHours,
   getBulgarianHolidays,
 } from "@/lib/utils";
-import type { Employee, ShiftType, ShiftValue, CustomShift } from "@/lib/types";
+import type {
+  Employee,
+  ShiftType,
+  ShiftValue,
+  CustomShift,
+  CustomShiftModalState,
+  WorkHoursModalState,
+} from "@/lib/types";
 import {
   SHIFT_OPTIONS,
   SHIFT_COLORS,
@@ -61,21 +68,14 @@ const ScheduleTable = ({
     return new Set(getBulgarianHolidays(year));
   }, [days]);
 
-  const [customShiftModal, setCustomShiftModal] = useState<{
-    open: boolean;
-    employeeId: string;
-    date: string;
-    existingShift?: CustomShift;
-  }>({
-    open: false,
-    employeeId: "",
-    date: "",
-  });
+  const [customShiftModal, setCustomShiftModal] =
+    useState<CustomShiftModalState>({
+      open: false,
+      employeeId: "",
+      date: "",
+    });
 
-  const [workHoursModal, setWorkHoursModal] = useState<{
-    open: boolean;
-    employeeId: string;
-  }>({
+  const [workHoursModal, setWorkHoursModal] = useState<WorkHoursModalState>({
     open: false,
     employeeId: "",
   });
