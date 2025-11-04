@@ -673,6 +673,43 @@ npm run dev
 
 ## 🚀 Deployment
 
+### GitHub Pages Deployment
+
+This project is configured to automatically deploy to GitHub Pages using GitHub Actions.
+
+#### Setup:
+
+1. **Add GitHub Secrets** (required for Firebase config):
+
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Click "New repository secret" and add each of these:
+     - `VITE_FIREBASE_API_KEY`
+     - `VITE_FIREBASE_AUTH_DOMAIN`
+     - `VITE_FIREBASE_PROJECT_ID`
+     - `VITE_FIREBASE_STORAGE_BUCKET`
+     - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+     - `VITE_FIREBASE_APP_ID`
+
+2. **Enable GitHub Pages**:
+
+   - Go to Settings → Pages
+   - Source: Deploy from a branch
+   - Branch: `gh-pages` / `root`
+   - Save
+
+3. **Deploy**:
+   - Push to `main` branch
+   - GitHub Actions will automatically build and deploy
+   - View workflow status in the "Actions" tab
+
+#### Important Security Notes:
+
+- ✅ Firebase API keys in client-side apps are **safe to expose** (they're meant for browsers)
+- ✅ Security is enforced by **Firestore Security Rules**, not by hiding keys
+- ✅ Always use **environment variables** (never hardcode in source)
+- ✅ The workflow uses **GitHub Secrets** to inject keys during build
+- ⚠️ Make sure your Firebase Security Rules are properly configured (see setup section)
+
 ### Vercel Deployment
 
 1. Push code to GitHub
