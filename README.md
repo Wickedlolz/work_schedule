@@ -739,7 +739,65 @@ netlify deploy --prod --dir=dist
 
 ---
 
-## 📦 Future Enhancements
+## � SEO Optimization
+
+The application is optimized for search engines with comprehensive SEO features:
+
+### Meta Tags & Structured Data
+
+- ✅ Complete Open Graph tags for social media sharing
+- ✅ Twitter Card tags for Twitter previews
+- ✅ JSON-LD structured data (Schema.org WebApplication)
+- ✅ Comprehensive meta descriptions and keywords (Bulgarian language)
+- ✅ Proper language attributes (`lang="bg"`)
+- ✅ Canonical URLs to avoid duplicate content
+
+### Technical SEO
+
+- ✅ `robots.txt` - Allows crawling and defines sitemap location
+- ✅ `sitemap.xml` - Helps search engines discover pages
+- ✅ `manifest.json` - PWA support for better mobile experience
+- ✅ Semantic HTML structure
+- ✅ Fast loading times with Vite optimization
+- ✅ Mobile-responsive design
+- ✅ HTTPS-ready configuration
+
+### Performance Optimizations
+
+- ✅ DNS prefetching for Firebase services
+- ✅ Font preconnecting for Google Fonts
+- ✅ Browser caching headers (`.htaccess`)
+- ✅ Gzip compression enabled
+- ✅ Optimized asset loading
+
+### Keywords Targeted (Bulgarian)
+
+- работен график (work schedule)
+- управление на смени (shift management)
+- планиране на служители (employee planning)
+- месечен график (monthly schedule)
+- национални празници България (Bulgarian national holidays)
+- експорт в Excel/PDF
+
+### Social Media Preview
+
+When shared on social media, the app displays:
+
+- 📱 Rich preview card with title and description
+- 🖼️ Custom image (configure `og-image.png` in `/public`)
+- 🔗 Proper URL structure
+
+### Monitoring & Analytics
+
+To track SEO performance, consider adding:
+
+- Google Analytics
+- Google Search Console
+- Facebook Pixel (optional)
+
+---
+
+## �📦 Future Enhancements
 
 - [x] 🔐 Firebase Authentication (Email/Password) ✅
 - [x] 👥 Role-based access (Read-only vs Full access) ✅

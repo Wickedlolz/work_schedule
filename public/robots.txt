@@ -1,0 +1,12 @@
+# robots.txt for work_schedule
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://wickedlolz.github.io/work_schedule/sitemap.xml
+
+# Block access to API endpoints if any
+Disallow: /api/
+
+# Crawl-delay to be respectful
+Crawl-delay: 1

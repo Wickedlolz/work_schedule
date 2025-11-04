@@ -1,12 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Android Chrome Icons -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/android-chrome-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/android-chrome-512x512.png"
+    />
+
+    <!-- Primary Meta Tags -->
+    <title>
+      Работен График - Управление на Смени и Служители | Online Планиране
+    </title>
+    <meta
+      name="title"
+      content="Работен График - Управление на Смени и Служители | Online Планиране"
+    />
+    <meta
+      name="description"
+      content="Професионална система за управление на работни графици, смени и служители. Създавайте множество графици, планирайте смени, следете работните часове и експортирайте в PDF и Excel. Безплатен онлайн инструмент."
+    />
+    <meta
+      name="keywords"
+      content="работен график, смени, планиране на смени, управление на служители, работно време, график на смени, месечен график, експорт в excel, експорт в pdf, онлайн график, работни часове, национални празници България"
+    />
+    <meta name="author" content="Wickedlolz" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Bulgarian" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://wickedlolz.github.io/work_schedule/"
+    />
+    <meta
+      property="og:title"
+      content="Работен График - Управление на Смени и Служители"
+    />
+    <meta
+      property="og:description"
+      content="Професионална система за управление на работни графици с множество функции - планиране на смени, следене на работни часове, експорт в PDF/Excel. Безплатен онлайн инструмент."
+    />
+    <meta
+      property="og:image"
+      content="https://wickedlolz.github.io/work_schedule/og-image.png"
+    />
+    <meta property="og:locale" content="bg_BG" />
+    <meta property="og:site_name" content="Работен График" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:url"
+      content="https://wickedlolz.github.io/work_schedule/"
+    />
+    <meta
+      property="twitter:title"
+      content="Работен График - Управление на Смени и Служители"
+    />
+    <meta
+      property="twitter:description"
+      content="Професионална система за управление на работни графици с множество функции - планиране на смени, следене на работни часове, експорт в PDF/Excel."
+    />
+    <meta
+      property="twitter:image"
+      content="https://wickedlolz.github.io/work_schedule/og-image.png"
+    />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://wickedlolz.github.io/work_schedule/" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#ef4444" />
+    <meta name="msapplication-TileColor" content="#ef4444" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <title>Работен График - Управление на Смени и Служители</title>
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Работен График",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any",
+        "description": "Професионална система за управление на работни графици, смени и служители. Създавайте множество графици, планирайте смени, следете работните часове и експортирайте в PDF и Excel.",
+        "url": "https://wickedlolz.github.io/work_schedule/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "BGN"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Wickedlolz"
+        },
+        "featureList": [
+          "Управление на множество графици",
+          "Планиране на смени",
+          "Персонализирани работни часове",
+          "Следене на работно време",
+          "Национални празници България",
+          "Експорт в PDF",
+          "Експорт в Excel",
+          "Мобилна версия",
+          "Реално време синхронизация"
+        ],
+        "browserRequirements": "Requires JavaScript. Requires HTML5."
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
