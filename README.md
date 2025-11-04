@@ -2,8 +2,6 @@
 
 A comprehensive, mobile-friendly work scheduling application with **multi-schedule support**. Built with **Vite + React**, styled using **TailwindCSS v4** and **Shadcn UI**, and powered by **Firebase Firestore** for real-time data synchronization across multiple schedules.
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/86406ffb-d1e0-4958-97e7-71bc61da5684/deploy-status)](https://app.netlify.com/projects/kfworkschedule/deploys)
-
 ---
 
 ## 📌 Features
