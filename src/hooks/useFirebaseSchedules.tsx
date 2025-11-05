@@ -212,6 +212,31 @@ export function useFirebaseSchedules() {
     }
   };
 
+  // Bulk update shifts for auto-generated schedule
+  const bulkUpdateShifts = async (
+    shiftsData: Record<string, Record<string, ShiftValue>>
+  ) => {
+    if (!activeScheduleId || !activeSchedule) return;
+
+    try {
+      const updatedEmployees = activeSchedule.employees.map((emp) => ({
+        ...emp,
+        shifts: { ...emp.shifts, ...shiftsData[emp.id] },
+      }));
+
+      const scheduleRef = doc(db, "schedules", activeScheduleId);
+
+      await updateDoc(scheduleRef, {
+        employees: updatedEmployees,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Error bulk updating shifts:", err);
+      setError("Failed to bulk update shifts");
+      throw err;
+    }
+  };
+
   return {
     schedules,
     activeSchedule,
@@ -225,5 +250,6 @@ export function useFirebaseSchedules() {
     addEmployee,
     removeEmployee,
     updateShift,
+    bulkUpdateShifts,
   };
 }

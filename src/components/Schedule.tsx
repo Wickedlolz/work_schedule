@@ -1,6 +1,11 @@
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
-import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
+import {
+  exportToExcel,
+  exportToPDF,
+  generateMonthDays,
+  autoGenerateSchedule,
+} from "@/lib/utils";
 import { toast } from "sonner";
 import type { ShiftValue, WorkingHours } from "@/lib/types";
 import {
@@ -37,6 +42,7 @@ const SchedulePage = () => {
     addEmployee: addEmployeeToFirebase,
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
+    bulkUpdateShifts,
   } = useFirebaseSchedules();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -161,6 +167,30 @@ const SchedulePage = () => {
   };
 
   /**
+   * Handles auto-generating schedule for the current month
+   */
+  const handleAutoGenerateSchedule = async () => {
+    if (!activeSchedule) return;
+
+    // Require at least 1 employee
+    if (activeSchedule.employees.length < 1) {
+      toast.error(MESSAGES.autoGenerate.minEmployees);
+      return;
+    }
+
+    try {
+      const generatedShifts = autoGenerateSchedule(
+        activeSchedule.employees,
+        days
+      );
+      await bulkUpdateShifts(generatedShifts);
+      toast.success(MESSAGES.autoGenerate.success);
+    } catch (err) {
+      toast.error(MESSAGES.autoGenerate.error(err));
+    }
+  };
+
+  /**
    * Export handlers for PDF and Excel formats
    */
   const handleExportPDF = () => {
@@ -249,6 +279,8 @@ const SchedulePage = () => {
                 onNextMonth={handleNextMonth}
                 onExportExcel={handleExportExcel}
                 onExportPDF={handleExportPDF}
+                onAutoGenerate={handleAutoGenerateSchedule}
+                isAuthenticated={!!user}
               />
             </div>
 

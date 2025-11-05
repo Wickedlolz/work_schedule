@@ -6,6 +6,8 @@ interface ScheduleActionsProps {
   onNextMonth: () => void;
   onExportExcel: () => void;
   onExportPDF: () => void;
+  onAutoGenerate?: () => void;
+  isAuthenticated?: boolean;
 }
 
 /**
@@ -16,6 +18,8 @@ export const ScheduleActions = ({
   onNextMonth,
   onExportExcel,
   onExportPDF,
+  onAutoGenerate,
+  isAuthenticated,
 }: ScheduleActionsProps) => {
   return (
     <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
@@ -33,6 +37,15 @@ export const ScheduleActions = ({
       >
         {MESSAGES.navigation.next}
       </Button>
+      {isAuthenticated && onAutoGenerate && (
+        <Button
+          onClick={onAutoGenerate}
+          variant="default"
+          className="cursor-pointer bg-green-600 hover:bg-green-700"
+        >
+          {MESSAGES.autoGenerate.button}
+        </Button>
+      )}
       <Button
         onClick={onExportExcel}
         variant="secondary"
