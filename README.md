@@ -97,6 +97,7 @@ Open http://localhost:5173
 
 - **[📚 Features in Detail](./docs/FEATURES.md)** - Complete feature documentation
 - **[🏗️ Project Structure](./docs/ARCHITECTURE.md)** - Architecture and code organization
+- **[⚡ Performance Optimizations](./docs/OPTIMIZATIONS.md)** - React optimization techniques
 - **[🚀 Deployment Guide](./docs/DEPLOYMENT.md)** - Deploy to GitHub Pages, Vercel, Netlify
 - **[🔍 SEO Checklist](./docs/SEO-CHECKLIST.md)** - SEO optimization guide
 - **[🎨 Favicon Guide](./docs/FAVICON-GUIDE.md)** - Icon setup instructions
