@@ -183,6 +183,9 @@ const ScheduleTable = ({
           </thead>
           <tbody>
             {employees.map((emp) => {
+              const workHoursStats = calculateEmployeeWorkHours(emp, days);
+              const isOverworked = workHoursStats.isOverworked;
+
               return (
                 <tr
                   key={emp.id}
@@ -199,10 +202,20 @@ const ScheduleTable = ({
                         onClick={() =>
                           setWorkHoursModal({ open: true, employeeId: emp.id })
                         }
-                        className="cursor-pointer text-blue-500 text-sm hover:text-blue-700 transition-colors"
+                        className={cn(
+                          "cursor-pointer text-sm hover:scale-110 transition-all relative",
+                          isOverworked
+                            ? "text-red-500 hover:text-red-700 animate-pulse"
+                            : "text-blue-500 hover:text-blue-700"
+                        )}
                         aria-label="Покажи работни часове"
+                        title={
+                          isOverworked
+                            ? "⚠️ Служителят е с повече часове от очакваното!"
+                            : "Покажи работни часове"
+                        }
                       >
-                        ℹ️
+                        {isOverworked ? "⚠️" : "ℹ️"}
                       </button>
                       {isAuthenticated && (
                         <AlertDialog>
