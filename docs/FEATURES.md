@@ -104,7 +104,62 @@ When **logged in** (Full Access):
 - Bulgarian national holidays also highlighted in red
 - 14 holidays supported (10 fixed + 4 Easter-based movable holidays)
 
-## 5. Work Hours Analytics
+## 5. Auto-Generate Schedules
+
+**🤖 Intelligent Schedule Generation**
+
+When authenticated, click the "🤖 Авто-генериране" (Auto-Generate) button to automatically create a complete monthly schedule with intelligent rules.
+
+**Adaptive Rules Based on Team Size:**
+
+The algorithm automatically adapts to your team size:
+
+**Large Teams (9+ employees):**
+
+- **Weekends**: 3 Morning shifts + 5-6 Evening shifts
+- **Weekdays**: Balanced Morning/Evening distribution
+- Ensures proper weekend coverage
+
+**Medium Teams (4-8 employees):**
+
+- **Weekends**: ~2 Morning shifts + rest Evening
+- **Weekdays**: Balanced Morning/Evening distribution
+- Adapted for medium-sized operations
+
+**Small Teams (1-3 employees):**
+
+- **Weekends**: ~1 Morning shift + rest Evening
+- **Weekdays**: Even distribution between shifts
+- Works with minimal workforce
+
+**Universal Rules (All Team Sizes):**
+
+- ✅ **2 Rest Days/Week**: Each employee gets at least 2 days off per week (maximum 5 work days)
+- ✅ **Monthly Hour Limits**: Respects expected monthly hours (working days × daily hours)
+- ✅ **4-Hour Employees**: Always assigned to Evening shift (they have another job in the morning)
+- ✅ **Night Shifts**: Left empty for manual assignment (never auto-generated)
+- ✅ **Continuous Coverage**: Rotating rest day patterns ensure someone is always working
+- ✅ **Fair Distribution**: Employees sorted by least accumulated hours for balanced workload
+
+**How It Works:**
+
+1. Calculates expected monthly hours per employee based on working days
+2. Groups days by week for proper rest day distribution
+3. Assigns 2 rest days per employee per week using rotating patterns (7 different patterns)
+4. Fills work shifts while tracking accumulated hours
+5. Stops assigning shifts when employee reaches expected monthly hours
+6. Prioritizes Evening shifts on weekends, Morning shifts on weekdays (balanced)
+7. Ensures 4-hour employees only get Evening shifts
+
+**Benefits:**
+
+- 🎯 **Labor Compliance**: Automatic rest day enforcement
+- ⏱️ **Hour Accuracy**: No more overworking employees
+- 🔄 **Fair Rotation**: Different employees rest on different days
+- 🚀 **Time Saving**: Generate entire month in seconds
+- 📊 **Predictable**: Consistent rules across all schedules
+
+## 6. Work Hours Analytics
 
 **Employee Work Hours Tracking:**
 
@@ -140,7 +195,7 @@ The system automatically excludes these holidays from expected hours calculation
 - Actual hours shown in gray (normal) or red (overworked)
 - Red alert box appears when employee exceeds expected hours
 
-## 6. Month Navigation
+## 7. Month Navigation
 
 - **Dropdown Selectors** - Choose specific month and year
 - **Next/Previous Buttons** - Navigate through months
@@ -149,7 +204,7 @@ The system automatically excludes these holidays from expected hours calculation
 - **Timezone Fix** - Corrected date generation to avoid off-by-one errors
 - **URL Parameters** - Month and year preserved in URL for sharing and bookmarking
 
-## 7. Export Features
+## 8. Export Features
 
 **PDF Export:**
 
@@ -170,7 +225,7 @@ The system automatically excludes these holidays from expected hours calculation
 - Cell alignment (centered shifts, left-aligned names)
 - Available to both authenticated and non-authenticated users
 
-## 8. State Persistence
+## 9. State Persistence
 
 **URL Parameters:**
 

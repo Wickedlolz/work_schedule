@@ -9,6 +9,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 ## 📌 Key Features
 
 - ✅ **Multiple Schedules** - Create and manage unlimited work schedules
+- ✅ **Auto-Generate Schedules** - Intelligent algorithm adapts to any team size
 - ✅ **Custom Shifts** - Personalized time ranges (e.g., 9:00-17:30)
 - ✅ **Work Hours Analytics** - Track expected vs actual hours with overwork alerts
 - ✅ **Bulgarian Holidays** - Automatic holiday detection and highlighting
@@ -24,7 +25,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 ## ⚙️ Tech Stack
 
 - **Vite** – Fast frontend tooling
-- **React 19** – UI library  
+- **React 19** – UI library
 - **TypeScript** – Type safety
 - **TailwindCSS v4** – Utility-first styling
 - **Shadcn UI** – Accessible UI components
@@ -66,7 +67,7 @@ service cloud.firestore {
     match /schedules/{scheduleId} {
       // Public read access (transparency)
       allow read: if true;
-      
+
       // Only authenticated users can modify
       allow create, update, delete: if request.auth != null;
     }
@@ -77,6 +78,7 @@ service cloud.firestore {
 ### 4. Create Admin User
 
 In Firebase Console → Authentication → Users:
+
 1. Click "Add user"
 2. Enter email and password
 3. Save
@@ -104,16 +106,24 @@ Open http://localhost:5173
 ## 🎯 Usage
 
 ### Public Mode (No Login)
+
 - ✅ View all schedules
 - ✅ Navigate months/years
 - ✅ Export to PDF/Excel
 - ❌ Cannot edit
 
 ### Authenticated Mode (After Login)
+
 - ✅ All public features
 - ✅ Create/edit/delete schedules
 - ✅ Add/remove employees
 - ✅ Assign shifts
+- ✅ **Auto-generate schedules** with intelligent rules:
+  - **Large teams (9+ employees)**: 3 Morning + 5-6 Evening on weekends
+  - **Medium teams (4-8 employees)**: ~2 Morning + rest Evening on weekends
+  - **Small teams (1-3 employees)**: Balanced distribution adapted to available workforce
+  - All teams: 2 rest days/week, respects monthly hour limits, 4-hour employees always Evening
+  - Weekdays: Balanced Morning/Evening (Night shifts left for manual assignment)
 
 ---
 
@@ -169,15 +179,18 @@ npm run lint         # Run ESLint
 ## 🐛 Troubleshooting
 
 ### Firebase Connection Issues
+
 - Verify `.env` variables are correct
 - Check Firebase console for enabled services
 - Whitelist your domain in Firebase settings
 
 ### Build Fails
+
 - Ensure Node.js 20+ is installed
 - Clear cache: `rm -rf node_modules package-lock.json && npm install`
 
 ### Authentication Not Working
+
 - Check Firestore rules are deployed
 - Verify user exists in Firebase Console
 - Check browser console for errors
@@ -189,6 +202,7 @@ For more troubleshooting, see [FEATURES.md](./docs/FEATURES.md#troubleshooting).
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
