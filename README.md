@@ -163,17 +163,15 @@ npm run lint         # Run ESLint
 
 ---
 
-## 📦 Future Enhancements
+## � Future Enhancements
 
-- [ ] Multi-user roles (Admin, Manager, Viewer)
+Planned features for future versions:
+
+- [ ] Dark mode support
 - [ ] Email notifications for schedule changes
-- [ ] Statistics dashboard
-- [ ] Schedule templates
-- [ ] Calendar view integration
-- [ ] Dark mode toggle
-- [ ] Multi-language support
+- [ ] Statistics and reports
 - [ ] PWA with offline support
-- [ ] Unit tests
+- [ ] Mobile app version
 
 ---
 
