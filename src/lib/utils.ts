@@ -337,6 +337,8 @@ export const exportToExcel = (
  * - 4-hour employees always assigned to Evening shift (they have another job in the morning)
  * - Respects expected monthly hours based on working days and employee's daily hours
  * - Ensures continuous coverage by rotating rest days among employees
+ * - CRITICAL: Always ensures coverage even if employees exceed expected hours
+ *   (better to work slightly over than have zero coverage on any day)
  */
 export const autoGenerateSchedule = (
   employees: Employee[],
@@ -406,8 +408,19 @@ export const autoGenerateSchedule = (
       return Math.random() - 0.5; // Random for equal hours
     });
 
-    // Assign 2 rest days per employee, rotating through days of the week
+    // Assign 2 rest days per employee, ensuring we always have coverage
     const restDayAssignments: Record<string, string[]> = {};
+    const restDayCounts: Record<string, number> = {}; // Track how many are resting each day
+
+    // Initialize rest day counts
+    weekDays.forEach((day) => {
+      restDayCounts[day] = 0;
+    });
+
+    // CRITICAL: Never allow ALL employees to rest on the same day
+    // At least 1 employee must work every day
+    const maxRestOnOneDay = Math.max(1, sortedEmployees.length - 1);
+
     sortedEmployees.forEach((emp, index) => {
       restDayAssignments[emp.id] = [];
 
@@ -416,51 +429,74 @@ export const autoGenerateSchedule = (
       const restDayPattern = index % 7; // 7 different patterns
 
       weekDays.forEach((day, dayIndex) => {
-        const dayOfWeek = new Date(day).getDay();
-        const isWeekend = WEEKEND_DAYS_NUM.includes(dayOfWeek);
-
         // Assign rest days based on pattern
         // Patterns ensure different employees rest on different days
-        if (restDayAssignments[emp.id].length < 2) {
+        if (
+          restDayAssignments[emp.id].length < 2 &&
+          restDayCounts[day] < maxRestOnOneDay
+        ) {
           if (restDayPattern === 0 && (dayIndex === 0 || dayIndex === 3)) {
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           } else if (
             restDayPattern === 1 &&
             (dayIndex === 1 || dayIndex === 4)
           ) {
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           } else if (
             restDayPattern === 2 &&
             (dayIndex === 2 || dayIndex === 5)
           ) {
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           } else if (
             restDayPattern === 3 &&
             (dayIndex === 0 || dayIndex === 4)
           ) {
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           } else if (
             restDayPattern === 4 &&
             (dayIndex === 1 || dayIndex === 5)
           ) {
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           } else if (
             restDayPattern === 5 &&
             (dayIndex === 2 || dayIndex === 6)
           ) {
             restDayAssignments[emp.id].push(day);
-          } else if (restDayPattern === 6 && isWeekend) {
+            restDayCounts[day]++;
+          } else if (
+            restDayPattern === 6 &&
+            (dayIndex === 1 || dayIndex === 5)
+          ) {
+            // Changed: Pattern 6 uses weekdays, not weekends, to avoid everyone off on weekends
             restDayAssignments[emp.id].push(day);
+            restDayCounts[day]++;
           }
         }
       });
 
-      // Ensure exactly 2 rest days (fill with random days if needed)
+      // Ensure exactly 2 rest days (fill with days that have fewest rest assignments)
       while (restDayAssignments[emp.id].length < 2 && weekDays.length > 2) {
-        const randomDay = weekDays[Math.floor(Math.random() * weekDays.length)];
-        if (!restDayAssignments[emp.id].includes(randomDay)) {
-          restDayAssignments[emp.id].push(randomDay);
-        }
+        // Find day with minimum rest count that this employee isn't already resting
+        const availableDays = weekDays.filter(
+          (day) =>
+            !restDayAssignments[emp.id].includes(day) &&
+            restDayCounts[day] < maxRestOnOneDay
+        );
+
+        if (availableDays.length === 0) break; // Safety check
+
+        // Pick the day with lowest rest count
+        const dayToAssign = availableDays.reduce((min, day) =>
+          restDayCounts[day] < restDayCounts[min] ? day : min
+        );
+
+        restDayAssignments[emp.id].push(dayToAssign);
+        restDayCounts[dayToAssign]++;
       }
     });
 
@@ -469,12 +505,20 @@ export const autoGenerateSchedule = (
       const dayOfWeek = new Date(day).getDay();
       const isWeekend = WEEKEND_DAYS_NUM.includes(dayOfWeek);
 
-      // Get employees who should work this day (not on rest and have hours available)
-      const workingEmployees = sortedEmployees.filter((emp) => {
-        if (restDayAssignments[emp.id].includes(day)) return false;
-        // Check if employee has hours available
-        return canWorkHours(emp.id, emp.workingHours);
+      // Get employees who should work this day (not on rest)
+      const availableEmployees = sortedEmployees.filter((emp) => {
+        return !restDayAssignments[emp.id].includes(day);
       });
+
+      // Prioritize employees who can still work within their hours
+      const employeesWithHours = availableEmployees.filter((emp) =>
+        canWorkHours(emp.id, emp.workingHours)
+      );
+
+      // CRITICAL FIX: If no employees have hours left, use all available employees anyway
+      // to ensure coverage (better to work slightly over than have zero coverage)
+      const workingEmployees =
+        employeesWithHours.length > 0 ? employeesWithHours : availableEmployees;
 
       // Separate 4-hour employees (always Evening) from others
       const fourHourEmployees = workingEmployees.filter(
@@ -491,14 +535,10 @@ export const autoGenerateSchedule = (
         let eveningCount = 0;
         let morningCount = 0;
 
-        // Calculate available employees
-        const totalAvailable = workingEmployees.filter((emp) =>
-          canWorkHours(emp.id, emp.workingHours)
-        ).length;
+        // Calculate available employees (prefer those with hours left)
+        const totalAvailable = workingEmployees.length;
 
-        const otherEmployeesAvailable = otherEmployees.filter((emp) =>
-          canWorkHours(emp.id, emp.workingHours)
-        );
+        const otherEmployeesAvailable = otherEmployees;
 
         // Adaptive targets based on team size
         let targetMorning: number;
@@ -520,13 +560,9 @@ export const autoGenerateSchedule = (
 
         // First, assign 4-hour employees to Evening
         fourHourEmployees.forEach((emp) => {
-          if (canWorkHours(emp.id, emp.workingHours)) {
-            scheduleData[emp.id][day] = "Evening";
-            addWorkHours(emp.id, emp.workingHours);
-            eveningCount++;
-          } else {
-            scheduleData[emp.id][day] = "Off";
-          }
+          scheduleData[emp.id][day] = "Evening";
+          addWorkHours(emp.id, emp.workingHours);
+          eveningCount++;
         });
 
         // Then assign other employees to Evening until we reach target
@@ -564,35 +600,25 @@ export const autoGenerateSchedule = (
 
         // First, assign all 4-hour employees to Evening
         fourHourEmployees.forEach((emp) => {
-          if (canWorkHours(emp.id, emp.workingHours)) {
-            scheduleData[emp.id][day] = "Evening";
-            addWorkHours(emp.id, emp.workingHours);
-          } else {
-            scheduleData[emp.id][day] = "Off";
-          }
+          scheduleData[emp.id][day] = "Evening";
+          addWorkHours(emp.id, emp.workingHours);
         });
 
         // Calculate how many employees should be on each shift
         // Aim for roughly equal distribution
-        const totalOtherEmployees = otherEmployees.filter((emp) =>
-          canWorkHours(emp.id, emp.workingHours)
-        ).length;
+        const totalOtherEmployees = otherEmployees.length;
         const targetMorning = Math.ceil(totalOtherEmployees / 2);
 
         // Distribute other employees to balance Morning and Evening
         otherEmployees.forEach((emp) => {
-          if (canWorkHours(emp.id, emp.workingHours)) {
-            // Assign to the shift that needs more people
-            if (morningCount < targetMorning) {
-              scheduleData[emp.id][day] = "Morning";
-              addWorkHours(emp.id, emp.workingHours);
-              morningCount++;
-            } else {
-              scheduleData[emp.id][day] = "Evening";
-              addWorkHours(emp.id, emp.workingHours);
-            }
+          // Assign to the shift that needs more people
+          if (morningCount < targetMorning) {
+            scheduleData[emp.id][day] = "Morning";
+            addWorkHours(emp.id, emp.workingHours);
+            morningCount++;
           } else {
-            scheduleData[emp.id][day] = "Off";
+            scheduleData[emp.id][day] = "Evening";
+            addWorkHours(emp.id, emp.workingHours);
           }
         });
       }
