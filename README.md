@@ -163,7 +163,7 @@ npm run lint         # Run ESLint
 
 ---
 
-## � Future Enhancements
+## 📦 Future Enhancements
 
 Planned features for future versions:
 
