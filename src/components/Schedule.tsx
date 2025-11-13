@@ -24,8 +24,7 @@ import { EmptyState } from "./schedule/EmptyState";
 import { MonthYearSelector } from "./schedule/MonthYearSelector";
 import { EmployeeForm } from "./schedule/EmployeeForm";
 import { ScheduleActions } from "./schedule/ScheduleActions";
-import { LoginButton } from "./auth/LoginButton";
-import { UserMenu } from "./auth/UserMenu";
+import { PageHeader } from "./PageHeader";
 
 const SchedulePage = () => {
   const { user } = useAuth();
@@ -238,17 +237,12 @@ const SchedulePage = () => {
   return (
     <section className="space-y-4">
       {/* Title Section with Auth Button */}
-      <div className="relative text-2xl md:text-4xl font-bold text-gray-800 mb-6 p-4 text-center md:text-left border-b bg-gradient-to-r from-red-50 via-white to-red-50">
-        <div className="flex items-center justify-between">
-          <h1>
-            {MESSAGES.title}{" "}
-            <span className={COLORS.PRIMARY_CLASS}>{monthLabel}</span>
-          </h1>
-          <div className="flex-shrink-0">
-            {user ? <UserMenu /> : <LoginButton />}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={MESSAGES.title}
+        subtitle={monthLabel}
+        subtitleClassName={COLORS.PRIMARY_CLASS}
+        user={user}
+      />
 
       {/* Schedule Selector */}
       <ScheduleSelector
