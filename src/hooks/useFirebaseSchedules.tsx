@@ -237,6 +237,39 @@ export function useFirebaseSchedules() {
     }
   };
 
+  // Update employee max monthly hours
+  const updateEmployeeMaxHours = async (
+    employeeId: string,
+    maxMonthlyHours: number | undefined
+  ) => {
+    if (!activeScheduleId || !activeSchedule) return;
+
+    try {
+      const updatedEmployees = activeSchedule.employees.map((emp) => {
+        if (emp.id === employeeId) {
+          if (maxMonthlyHours === undefined) {
+            // Remove the maxMonthlyHours field
+            const { maxMonthlyHours: _, ...empWithoutMaxHours } = emp;
+            return empWithoutMaxHours;
+          }
+          return { ...emp, maxMonthlyHours };
+        }
+        return emp;
+      });
+
+      const scheduleRef = doc(db, "schedules", activeScheduleId);
+
+      await updateDoc(scheduleRef, {
+        employees: updatedEmployees,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Error updating employee max hours:", err);
+      setError("Failed to update employee max hours");
+      throw err;
+    }
+  };
+
   return {
     schedules,
     activeSchedule,
@@ -251,5 +284,6 @@ export function useFirebaseSchedules() {
     removeEmployee,
     updateShift,
     bulkUpdateShifts,
+    updateEmployeeMaxHours,
   };
 }

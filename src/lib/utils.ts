@@ -78,8 +78,9 @@ export const calculateEmployeeWorkHours = (
     return !isWeekend && !isHoliday;
   }).length;
 
-  // Expected hours = working days in month * employee's daily hours
-  const expectedHours = workingDaysCount * employee.workingHours;
+  // Expected hours = manual override OR (working days in month * employee's daily hours)
+  const expectedHours =
+    employee.maxMonthlyHours ?? workingDaysCount * employee.workingHours;
 
   days.forEach((day) => {
     const shift = employee.shifts[day];

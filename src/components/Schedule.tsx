@@ -42,6 +42,7 @@ const SchedulePage = () => {
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
     bulkUpdateShifts,
+    updateEmployeeMaxHours,
   } = useFirebaseSchedules();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -304,6 +305,7 @@ const SchedulePage = () => {
             days={days}
             handleShiftChange={handleShiftChange}
             removeEmployee={handleRemoveEmployee}
+            updateEmployeeMaxHours={updateEmployeeMaxHours}
             tableRef={tableRef}
             isAuthenticated={!!user}
           />

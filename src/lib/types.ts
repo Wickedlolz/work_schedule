@@ -21,6 +21,7 @@ export interface Employee {
   id: string;
   name: string;
   workingHours: WorkingHours; // Daily working hours: 4, 6, or 8
+  maxMonthlyHours?: number; // Optional: Manual override for max monthly hours
   shifts: Record<string, ShiftValue>; // Key = date: "YYYY-MM-DD"
 }
 

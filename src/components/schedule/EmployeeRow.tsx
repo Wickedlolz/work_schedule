@@ -84,7 +84,11 @@ export const EmployeeRow = memo(
           <div className="flex items-center justify-center gap-1 relative">
             <span>{employee.name}</span>
             <button
-              onClick={() => onWorkHoursClick(employee.id)}
+              type="button"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onWorkHoursClick(employee.id);
+              }}
               className={cn(
                 "cursor-pointer text-sm hover:scale-110 transition-all relative",
                 isOverworked
