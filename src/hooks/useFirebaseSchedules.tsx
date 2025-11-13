@@ -249,6 +249,7 @@ export function useFirebaseSchedules() {
         if (emp.id === employeeId) {
           if (maxMonthlyHours === undefined) {
             // Remove the maxMonthlyHours field
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { maxMonthlyHours: _, ...empWithoutMaxHours } = emp;
             return empWithoutMaxHours;
           }

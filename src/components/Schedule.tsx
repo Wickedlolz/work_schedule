@@ -208,25 +208,16 @@ const SchedulePage = () => {
     );
   };
 
-  /**
-   * Render loading state
-   */
   if (loading) {
     return <LoadingState />;
   }
 
-  /**
-   * Render error state with retry option
-   */
   if (error) {
     return (
       <ErrorState error={error} onRetry={() => window.location.reload()} />
     );
   }
 
-  /**
-   * Render empty state when no schedules exist
-   */
   if (schedules.length === 0) {
     return (
       <EmptyState
@@ -237,7 +228,6 @@ const SchedulePage = () => {
 
   return (
     <section className="space-y-4">
-      {/* Title Section with Auth Button */}
       <Header
         title={MESSAGES.title}
         subtitle={monthLabel}
@@ -245,7 +235,6 @@ const SchedulePage = () => {
         user={user}
       />
 
-      {/* Schedule Selector */}
       <ScheduleSelector
         schedules={schedules}
         activeScheduleId={activeScheduleId}
@@ -256,12 +245,9 @@ const SchedulePage = () => {
         isAuthenticated={!!user}
       />
 
-      {/* Main Content */}
       {activeSchedule && (
         <>
-          {/* Controls Section */}
           <section className="flex flex-col flex-wrap gap-4 sm:gap-2">
-            {/* Month/Year Selectors and Navigation */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between flex-wrap">
               <MonthYearSelector
                 selectedMonth={selectedMonth}
@@ -279,7 +265,6 @@ const SchedulePage = () => {
               />
             </div>
 
-            {/* Authentication Notice */}
             {!user && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
                 <p className="font-medium">👁️ Режим на преглед</p>
@@ -299,7 +284,6 @@ const SchedulePage = () => {
             )}
           </section>
 
-          {/* Schedule Table */}
           <ScheduleTable
             employees={activeSchedule.employees}
             days={days}
