@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable, { CellHookData } from "jspdf-autotable";
+import Holidays from "date-holidays";
 import type { Employee, ShiftValue } from "./types";
 import "@/lib/OpenSans-Regular-normal.js";
 import "@/lib/OpenSans-Bold-normal.js";
@@ -39,87 +40,21 @@ export const calculateCustomShiftHours = (customShift: {
 /**
  * Get Bulgarian national holidays for a specific year
  * Returns array of dates in "YYYY-MM-DD" format
+ * Uses the date-holidays package for accurate holiday calculations
  */
 export const getBulgarianHolidays = (year: number): string[] => {
-  const holidays: string[] = [];
+  const hd = new Holidays("BG"); // Bulgaria
+  const holidays = hd.getHolidays(year);
 
-  // Fixed holidays
-  const fixedHolidays = [
-    { month: 0, day: 1 }, // New Year's Day - January 1
-    { month: 2, day: 3 }, // Liberation Day - March 3
-    { month: 4, day: 1 }, // Labour Day - May 1
-    { month: 4, day: 6 }, // St. George's Day / Bulgarian Army Day - May 6
-    { month: 4, day: 24 }, // Day of Bulgarian Education and Culture - May 24
-    { month: 8, day: 6 }, // Unification Day - September 6
-    { month: 8, day: 22 }, // Independence Day - September 22
-    { month: 11, day: 24 }, // Christmas Eve - December 24
-    { month: 11, day: 25 }, // Christmas Day - December 25
-    { month: 11, day: 26 }, // Second Day of Christmas - December 26
-  ];
-
-  fixedHolidays.forEach(({ month, day }) => {
-    const date = new Date(year, month, day, 12, 0, 0);
-    const dateString = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    holidays.push(dateString);
-  });
-
-  // Easter-based holidays (movable)
-  // Note: This is a simplified calculation. For production, consider using a library
-  // or API for accurate Easter calculation
-  const easter = calculateEaster(year);
-
-  // Good Friday (2 days before Easter)
-  const goodFriday = new Date(easter);
-  goodFriday.setDate(goodFriday.getDate() - 2);
-  holidays.push(formatDate(goodFriday));
-
-  // Holy Saturday (1 day before Easter)
-  const holySaturday = new Date(easter);
-  holySaturday.setDate(holySaturday.getDate() - 1);
-  holidays.push(formatDate(holySaturday));
-
-  // Easter Sunday
-  holidays.push(formatDate(easter));
-
-  // Easter Monday (1 day after Easter)
-  const easterMonday = new Date(easter);
-  easterMonday.setDate(easterMonday.getDate() + 1);
-  holidays.push(formatDate(easterMonday));
-
-  return holidays;
-};
-
-/**
- * Calculate Easter date using Meeus/Jones/Butcher algorithm
- */
-const calculateEaster = (year: number): Date => {
-  const a = year % 19;
-  const b = Math.floor(year / 100);
-  const c = year % 100;
-  const d = Math.floor(b / 4);
-  const e = b % 4;
-  const f = Math.floor((b + 8) / 25);
-  const g = Math.floor((b - f + 1) / 3);
-  const h = (19 * a + b - d - g + 15) % 30;
-  const i = Math.floor(c / 4);
-  const k = c % 4;
-  const l = (32 + 2 * e + 2 * i - h - k) % 7;
-  const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const month = Math.floor((h + l - 7 * m + 114) / 31);
-  const day = ((h + l - 7 * m + 114) % 31) + 1;
-  return new Date(year, month - 1, day, 12, 0, 0);
-};
-
-/**
- * Format date to YYYY-MM-DD string
- */
-const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return holidays
+    .filter((holiday) => holiday.type === "public") // Only public holidays
+    .map((holiday) => {
+      const date = new Date(holiday.date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    });
 };
 
 /**
