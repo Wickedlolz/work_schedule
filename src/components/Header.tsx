@@ -3,19 +3,19 @@ import type { User } from "firebase/auth";
 import { LoginButton } from "./auth/LoginButton";
 import { UserMenu } from "./auth/UserMenu";
 
-interface PageHeaderProps {
+interface HeaderProps {
   title: string;
   subtitle: string;
   subtitleClassName?: string;
   user: User | null;
 }
 
-export const PageHeader = ({
+export const Header = ({
   title,
   subtitle,
   subtitleClassName = "",
   user,
-}: PageHeaderProps) => {
+}: HeaderProps) => {
   return (
     <div className="relative text-xl sm:text-2xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-6 p-3 sm:p-4 border-b bg-gradient-to-r from-red-50 via-white to-red-50">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">

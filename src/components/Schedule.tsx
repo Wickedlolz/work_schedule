@@ -24,7 +24,7 @@ import { EmptyState } from "./schedule/EmptyState";
 import { MonthYearSelector } from "./schedule/MonthYearSelector";
 import { EmployeeForm } from "./schedule/EmployeeForm";
 import { ScheduleActions } from "./schedule/ScheduleActions";
-import { PageHeader } from "./PageHeader";
+import { Header } from "./Header";
 
 const SchedulePage = () => {
   const { user } = useAuth();
@@ -238,7 +238,7 @@ const SchedulePage = () => {
   return (
     <section className="space-y-4">
       {/* Title Section with Auth Button */}
-      <PageHeader
+      <Header
         title={MESSAGES.title}
         subtitle={monthLabel}
         subtitleClassName={COLORS.PRIMARY_CLASS}
