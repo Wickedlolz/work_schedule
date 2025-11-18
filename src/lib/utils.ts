@@ -58,6 +58,19 @@ export const getBulgarianHolidays = (year: number): string[] => {
 };
 
 /**
+ * Calculate total work hours across all employees
+ */
+export const calculateTotalWorkHours = (
+  employees: Employee[],
+  days: string[]
+): number => {
+  return employees.reduce((total, employee) => {
+    const stats = calculateEmployeeWorkHours(employee, days);
+    return total + stats.actual;
+  }, 0);
+};
+
+/**
  * Calculate total work hours for an employee for given days
  */
 export const calculateEmployeeWorkHours = (
