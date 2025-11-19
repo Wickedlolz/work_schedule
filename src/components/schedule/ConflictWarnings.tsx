@@ -26,11 +26,13 @@ export const ConflictWarnings = ({
       </div>
       <div className="space-y-2 max-h-60 overflow-y-auto">
         {Array.from(conflicts.entries()).map(([key, message]) => {
-          const [employeeId, date] = key.split("-");
+          const [employeeId, ...dateParts] = key.split("-");
+          const date = dateParts.join("-");
           const employee = employees.find((e) => e.id === employeeId);
           if (!employee) return null;
 
-          const formattedDate = new Date(date).toLocaleDateString("bg-BG", {
+          const [year, month, day] = date.split("-").map(Number);
+          const formattedDate = new Date(year, month - 1, day).toLocaleDateString("bg-BG", {
             day: "numeric",
             month: "long",
           });
