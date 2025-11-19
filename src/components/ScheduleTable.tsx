@@ -1,5 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
-import { cn, getBulgarianHolidays } from "@/lib/utils";
+import {
+  cn,
+  getBulgarianHolidays,
+  detectAllShiftConflicts,
+  calculateEmployeeWorkHours,
+} from "@/lib/utils";
 import type {
   Employee,
   ShiftType,
@@ -12,6 +17,7 @@ import { WEEKEND_DAYS } from "@/lib/constants";
 
 import { CustomShiftModal } from "./schedule/CustomShiftModal";
 import { WorkHoursModal } from "./schedule/WorkHoursModal";
+import { ConflictWarnings } from "./schedule/ConflictWarnings";
 import { EmployeeRow } from "./schedule/EmployeeRow";
 
 interface ScheduleTableProps {
@@ -46,6 +52,11 @@ const ScheduleTable = ({
     const year = new Date(days[0]).getFullYear();
     return new Set(getBulgarianHolidays(year));
   }, [days]);
+
+  // Detect shift conflicts
+  const conflicts = useMemo(() => {
+    return detectAllShiftConflicts(employees, days);
+  }, [employees, days]);
 
   const [customShiftModal, setCustomShiftModal] =
     useState<CustomShiftModalState>({
@@ -149,6 +160,7 @@ const ScheduleTable = ({
                 employee={emp}
                 days={days}
                 holidays={holidays}
+                conflicts={conflicts}
                 isAuthenticated={isAuthenticated}
                 onShiftChange={handleSelectChange}
                 onRemove={removeEmployee}
@@ -158,6 +170,27 @@ const ScheduleTable = ({
           </tbody>
         </table>
       </div>
+
+      {/* Total Work Hours Summary */}
+      {employees.length > 0 && (
+        <div className="mt-4 text-center">
+          <p className="text-lg font-semibold text-gray-700">
+            Общо работни часове:{" "}
+            <span className="text-gray-900">
+              {employees.reduce((total, employee) => {
+                const workHoursStats = calculateEmployeeWorkHours(
+                  employee,
+                  days
+                );
+                return total + workHoursStats.actual;
+              }, 0)}
+              ч
+            </span>
+          </p>
+        </div>
+      )}
+
+      <ConflictWarnings conflicts={conflicts} employees={employees} />
 
       {/* Work Hours Info Modal */}
       <WorkHoursModal

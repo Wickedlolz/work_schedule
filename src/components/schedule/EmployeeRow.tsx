@@ -31,6 +31,7 @@ type EmployeeRowProps = {
   employee: Employee;
   days: string[];
   holidays: Set<string>;
+  conflicts: Map<string, string>;
   isAuthenticated: boolean;
   onShiftChange: (employeeId: string, date: string, value: ShiftType) => void;
   onRemove: (employeeId: string) => void;
@@ -63,6 +64,7 @@ export const EmployeeRow = memo(
     employee,
     days,
     holidays,
+    conflicts,
     isAuthenticated,
     onShiftChange,
     onRemove,
@@ -151,17 +153,27 @@ export const EmployeeRow = memo(
           const isHoliday = holidays.has(day);
           const isRedDay = isWeekend || isHoliday;
           const currentShift = employee.shifts[day] || "Off";
+          const conflictKey = `${employee.id}-${day}`;
+          const hasConflict = conflicts.has(conflictKey);
+          const conflictMessage = conflicts.get(conflictKey);
 
           return (
             <td
               key={day}
               role="cell"
               className={cn(
-                "border border-gray-300 p-1 text-center whitespace-nowrap",
+                "border border-gray-300 p-1 text-center whitespace-nowrap relative",
                 isRedDay && "bg-red-50",
+                hasConflict && "bg-orange-100 border-orange-400 border-2",
                 getShiftColor(currentShift)
               )}
+              title={hasConflict ? conflictMessage : undefined}
             >
+              {hasConflict && (
+                <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
+                  !
+                </div>
+              )}
               {isAuthenticated ? (
                 <Select
                   value={getShiftValue(currentShift)}

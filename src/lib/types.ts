@@ -44,3 +44,11 @@ export interface WorkHoursModalState {
   open: boolean;
   employeeId: string;
 }
+
+export interface ShiftConflict {
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  shift: ShiftValue;
+  conflictReason: string;
+}

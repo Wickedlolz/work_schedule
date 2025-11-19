@@ -38,6 +38,177 @@ export const calculateCustomShiftHours = (customShift: {
 };
 
 /**
+ * Get shift time range in minutes from midnight
+ */
+const getShiftTimeRange = (
+  shift: ShiftValue
+): { start: number; end: number } | null => {
+  if (
+    !shift ||
+    shift === "Off" ||
+    shift === "Sick Leave" ||
+    shift === "Vacation"
+  ) {
+    return null;
+  }
+
+  if (typeof shift === "object" && shift.type === "Custom") {
+    const [startHour, startMin] = shift.startTime.split(":").map(Number);
+    const [endHour, endMin] = shift.endTime.split(":").map(Number);
+    return {
+      start: startHour * 60 + startMin,
+      end: endHour * 60 + endMin,
+    };
+  }
+
+  // Standard shift times
+  const shiftTimes: Record<string, { start: number; end: number }> = {
+    Morning: { start: 6 * 60, end: 14 * 60 }, // 06:00 - 14:00
+    Evening: { start: 14 * 60, end: 22 * 60 }, // 14:00 - 22:00
+    Night: { start: 22 * 60, end: 6 * 60 + 24 * 60 }, // 22:00 - 06:00 (next day)
+  };
+
+  return shiftTimes[shift as string] || null;
+};
+
+/**
+ * Check if two time ranges overlap
+ */
+const doTimeRangesOverlap = (
+  range1: { start: number; end: number },
+  range2: { start: number; end: number }
+): boolean => {
+  return range1.start < range2.end && range2.start < range1.end;
+};
+
+/**
+ * Detect shift conflicts for a single employee on a specific date
+ */
+export const detectShiftConflict = (
+  employee: Employee,
+  date: string,
+  proposedShift: ShiftValue
+): string | null => {
+  const existingShift = employee.shifts[date];
+
+  // No conflict if no existing shift or if it's Off/Sick/Vacation
+  if (
+    !existingShift ||
+    existingShift === "Off" ||
+    existingShift === "Sick Leave" ||
+    existingShift === "Vacation"
+  ) {
+    return null;
+  }
+
+  // No conflict if proposed shift is Off/Sick/Vacation
+  if (
+    !proposedShift ||
+    proposedShift === "Off" ||
+    proposedShift === "Sick Leave" ||
+    proposedShift === "Vacation"
+  ) {
+    return null;
+  }
+
+  const existingRange = getShiftTimeRange(existingShift);
+  const proposedRange = getShiftTimeRange(proposedShift);
+
+  if (!existingRange || !proposedRange) {
+    return null;
+  }
+
+  if (doTimeRangesOverlap(existingRange, proposedRange)) {
+    const existingDisplay = getShiftDisplayText(existingShift);
+    const proposedDisplay = getShiftDisplayText(proposedShift);
+    return `Конфликт: ${proposedDisplay} се припокрива с ${existingDisplay}`;
+  }
+
+  return null;
+};
+
+/**
+ * Detect all shift conflicts across all employees
+ */
+export const detectAllShiftConflicts = (
+  employees: Employee[],
+  days: string[]
+): Map<string, string> => {
+  const conflicts = new Map<string, string>();
+
+  employees.forEach((employee) => {
+    days.forEach((date) => {
+      const shift = employee.shifts[date];
+      if (
+        !shift ||
+        shift === "Off" ||
+        shift === "Sick Leave" ||
+        shift === "Vacation"
+      ) {
+        return;
+      }
+
+      // Check for impossible shifts (e.g., custom shift with end time before start time)
+      if (typeof shift === "object" && shift.type === "Custom") {
+        const [startHour, startMin] = shift.startTime.split(":").map(Number);
+        const [endHour, endMin] = shift.endTime.split(":").map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        if (endMinutes <= startMinutes) {
+          const key = `${employee.id}-${date}`;
+          conflicts.set(key, "Грешка: Крайният час е преди началния");
+        }
+      }
+
+      // Check for consecutive Night shifts with insufficient rest
+      // After a night shift, employee should have at least 2 days off
+      if (shift === "Night") {
+        // Check next day
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDateStr = nextDate.toISOString().split("T")[0];
+        const nextShift = employee.shifts[nextDateStr];
+
+        if (
+          nextShift &&
+          nextShift !== "Off" &&
+          nextShift !== "Sick Leave" &&
+          nextShift !== "Vacation"
+        ) {
+          const key = `${employee.id}-${nextDateStr}`;
+          conflicts.set(
+            key,
+            "Внимание: Необходими са 2 дни почивка след нощна смяна"
+          );
+        }
+
+        // Check day after next (second day)
+        const secondDate = new Date(date);
+        secondDate.setDate(secondDate.getDate() + 2);
+        const secondDateStr = secondDate.toISOString().split("T")[0];
+        const secondShift = employee.shifts[secondDateStr];
+
+        if (
+          secondShift &&
+          secondShift !== "Off" &&
+          secondShift !== "Sick Leave" &&
+          secondShift !== "Vacation"
+        ) {
+          const key = `${employee.id}-${secondDateStr}`;
+          conflicts.set(
+            key,
+            "Внимание: Необходими са 2 дни почивка след нощна смяна"
+          );
+        }
+      }
+    });
+  });
+
+  return conflicts;
+};
+
+/**
  * Get Bulgarian national holidays for a specific year
  * Returns array of dates in "YYYY-MM-DD" format
  * Uses the date-holidays package for accurate holiday calculations
