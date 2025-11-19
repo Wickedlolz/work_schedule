@@ -1,7 +1,24 @@
+import { lazy, Suspense } from "react";
 import type { User } from "firebase/auth";
 
-import { LoginButton } from "./auth/LoginButton";
 import { UserMenu } from "./auth/UserMenu";
+import { Button } from "./ui/button";
+import { LogIn } from "lucide-react";
+
+// Lazy load LoginButton since it's only needed when user is not authenticated
+const LoginButton = lazy(() =>
+  import("./auth/LoginButton").then((module) => ({
+    default: module.LoginButton,
+  }))
+);
+
+// Fallback loading button while LoginButton is being loaded
+const LoginButtonFallback = () => (
+  <Button variant="default" className="gap-2 shadow-sm" disabled>
+    <LogIn className="w-4 h-4" />
+    Вход
+  </Button>
+);
 
 interface HeaderProps {
   title: string;
@@ -26,7 +43,13 @@ export const Header = ({
           </span>
         </h1>
         <div className="flex-shrink-0 w-full sm:w-auto flex justify-center sm:justify-end">
-          {user ? <UserMenu /> : <LoginButton />}
+          {user ? (
+            <UserMenu />
+          ) : (
+            <Suspense fallback={<LoginButtonFallback />}>
+              <LoginButton />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

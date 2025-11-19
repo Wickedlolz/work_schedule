@@ -13,7 +13,33 @@ import { db } from "@/lib/firebase";
 import type { Schedule, Employee, ShiftValue, WorkingHours } from "@/lib/types";
 import { DEFAULT_WORKING_HOURS } from "@/lib/constants";
 
-export function useFirebaseSchedules() {
+interface UseFirebaseSchedulesReturn {
+  schedules: Schedule[];
+  activeSchedule: Schedule | undefined;
+  activeScheduleId: string | null;
+  setActiveScheduleId: (id: string | null) => void;
+  loading: boolean;
+  error: string | null;
+  addSchedule: (name: string) => Promise<string | undefined>;
+  deleteSchedule: (id: string) => Promise<void>;
+  renameSchedule: (id: string, newName: string) => Promise<void>;
+  addEmployee: (name: string, workingHours?: WorkingHours) => Promise<void>;
+  removeEmployee: (employeeId: string) => Promise<void>;
+  updateShift: (
+    employeeId: string,
+    date: string,
+    shift: ShiftValue
+  ) => Promise<void>;
+  bulkUpdateShifts: (
+    shiftsData: Record<string, Record<string, ShiftValue>>
+  ) => Promise<void>;
+  updateEmployeeMaxHours: (
+    employeeId: string,
+    maxMonthlyHours: number | undefined
+  ) => Promise<void>;
+}
+
+export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [activeScheduleId, setActiveScheduleId] = useState<string | null>(
     () => {

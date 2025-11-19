@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +31,6 @@ export const LoginButton = () => {
       setShowForm(false);
       reset();
     } catch (error) {
-      // Error is handled in AuthContext
       console.error("Грешка при влизане:", error);
     }
   };
