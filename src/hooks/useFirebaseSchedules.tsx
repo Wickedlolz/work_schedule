@@ -19,6 +19,7 @@ interface UseFirebaseSchedulesReturn {
   activeScheduleId: string | null;
   setActiveScheduleId: (id: string | null) => void;
   loading: boolean;
+  switchingSchedule: boolean;
   error: string | null;
   addSchedule: (name: string) => Promise<string | undefined>;
   deleteSchedule: (id: string) => Promise<void>;
@@ -41,14 +42,15 @@ interface UseFirebaseSchedulesReturn {
 
 export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [activeScheduleId, setActiveScheduleId] = useState<string | null>(
-    () => {
-      // Initialize from URL params if available
-      const params = new URLSearchParams(window.location.search);
-      return params.get("schedule") || null;
-    }
-  );
+  const [activeScheduleId, setActiveScheduleIdInternal] = useState<
+    string | null
+  >(() => {
+    // Initialize from URL params if available
+    const params = new URLSearchParams(window.location.search);
+    return params.get("schedule") || null;
+  });
   const [loading, setLoading] = useState(true);
+  const [switchingSchedule, setSwitchingSchedule] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Update URL params whenever activeScheduleId changes
@@ -91,10 +93,11 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
 
         // Set first schedule as active if none is selected
         if (scheduleData.length > 0 && !activeScheduleId) {
-          setActiveScheduleId(scheduleData[0].id);
+          setActiveScheduleIdInternal(scheduleData[0].id);
         }
 
         setLoading(false);
+        setSwitchingSchedule(false);
       },
       (err) => {
         console.error("Error fetching schedules:", err);
@@ -119,7 +122,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         updatedAt: new Date().toISOString(),
       };
       const docRef = await addDoc(collection(db, "schedules"), newSchedule);
-      setActiveScheduleId(docRef.id);
+      setActiveScheduleIdInternal(docRef.id);
       return docRef.id;
     } catch (err) {
       console.error("Error adding schedule:", err);
@@ -136,7 +139,9 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
       // If deleted schedule was active, switch to first available
       if (id === activeScheduleId) {
         const remaining = schedules.filter((s) => s.id !== id);
-        setActiveScheduleId(remaining.length > 0 ? remaining[0].id : null);
+        setActiveScheduleIdInternal(
+          remaining.length > 0 ? remaining[0].id : null
+        );
       }
     } catch (err) {
       console.error("Error deleting schedule:", err);
@@ -297,12 +302,19 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     }
   };
 
+  // Wrapper function that sets switching state before changing schedule
+  const setActiveScheduleId = (id: string | null) => {
+    setSwitchingSchedule(true);
+    setActiveScheduleIdInternal(id);
+  };
+
   return {
     schedules,
     activeSchedule,
     activeScheduleId,
     setActiveScheduleId,
     loading,
+    switchingSchedule,
     error,
     addSchedule,
     deleteSchedule,
