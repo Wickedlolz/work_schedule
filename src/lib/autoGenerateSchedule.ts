@@ -1,12 +1,6 @@
 import { getISOWeek } from "date-fns";
 import { getBulgarianHolidays } from "./utils";
-import type { ShiftValue } from "./types";
-
-export interface Employee {
-  id: string;
-  name: string;
-  workingHours: number; // Daily hours (e.g., 4 or 8)
-}
+import type { Employee, ShiftValue } from "./types";
 
 /**
  * Auto-generate a monthly schedule for employees.
