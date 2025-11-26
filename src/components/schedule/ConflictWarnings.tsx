@@ -32,7 +32,11 @@ export const ConflictWarnings = ({
           if (!employee) return null;
 
           const [year, month, day] = date.split("-").map(Number);
-          const formattedDate = new Date(year, month - 1, day).toLocaleDateString("bg-BG", {
+          const formattedDate = new Date(
+            year,
+            month - 1,
+            day
+          ).toLocaleDateString("bg-BG", {
             day: "numeric",
             month: "long",
           });
