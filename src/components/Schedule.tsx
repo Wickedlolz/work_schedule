@@ -1,11 +1,8 @@
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useFirebaseSchedules } from "@/hooks/useFirebaseSchedules";
-import {
-  exportToExcel,
-  exportToPDF,
-  generateMonthDays,
-  autoGenerateSchedule,
-} from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
+import { autoGenerateSchedule } from "@/lib/autoGenerateSchedule";
 import { toast } from "sonner";
 import type { ShiftValue, WorkingHours } from "@/lib/types";
 import {
@@ -14,7 +11,6 @@ import {
   COLORS,
   MESSAGES,
 } from "@/lib/constants";
-import { useAuth } from "@/hooks/useAuth";
 
 import ScheduleTable from "./ScheduleTable";
 import ScheduleSelector from "./ScheduleSelector";
