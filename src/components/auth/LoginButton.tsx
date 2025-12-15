@@ -74,7 +74,7 @@ export const LoginButton = () => {
               className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-[calc(100%-2rem)] max-w-md"
             >
               {/* Header */}
-              <div className="relative bg-gradient-to-br from-rose-600 to-red-600 rounded-t-2xl px-4 sm:px-6 py-6 sm:py-8 text-white">
+              <div className="relative bg-linear-to-br from-rose-600 to-red-600 rounded-t-2xl px-4 sm:px-6 py-6 sm:py-8 text-white">
                 <button
                   onClick={handleClose}
                   type="button"
@@ -191,7 +191,7 @@ export const LoginButton = () => {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full cursor-pointer h-10 sm:h-11 text-sm sm:text-base font-semibold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-200 mt-4 sm:mt-6"
+                  className="w-full cursor-pointer h-10 sm:h-11 text-sm sm:text-base font-semibold bg-linear-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-200 mt-4 sm:mt-6"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

@@ -15,7 +15,7 @@ export const TotalWorkHoursSummary = ({
   if (!isAuthenticated) return null;
 
   return (
-    <div className="bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 rounded-lg p-4 shadow-sm">
+    <div className="bg-linear-to-r from-rose-50 to-red-50 border border-rose-200 rounded-lg p-4 shadow-sm">
       <h3 className="text-sm font-medium text-gray-700 mb-2">
         📊 Общо работни часове за всички графици:
       </h3>

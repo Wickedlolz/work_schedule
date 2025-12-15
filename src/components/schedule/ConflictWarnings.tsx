@@ -12,7 +12,7 @@ export const ConflictWarnings = ({
   if (conflicts.size === 0) return null;
 
   return (
-    <div className="mt-4 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+    <div className="mt-4 bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-2">
       <div className="flex items-start gap-2 mb-3">
         <span className="text-orange-600 text-xl">⚠️</span>
         <div>
