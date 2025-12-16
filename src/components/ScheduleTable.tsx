@@ -173,7 +173,7 @@ const ScheduleTable = ({
 
       {/* Total Work Hours Summary */}
       {employees.length > 0 && (
-        <div className="mt-4 text-center">
+        <div className="mt-4 mb-3 text-center">
           <p className="text-lg font-semibold text-gray-700">
             Общо работни часове:{" "}
             <span className="text-gray-900">
