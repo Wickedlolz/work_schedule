@@ -122,6 +122,13 @@ export const autoGenerateSchedule = (
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
+      // First, mark all rest day employees as "Off" BEFORE assigning shifts
+      sortedEmployees.forEach((emp) => {
+        if (restDayAssignments[emp.id]?.includes(day)) {
+          scheduleData[emp.id][day] = "Off";
+        }
+      });
+
       // 1. Filter who is available (not resting)
       let availableForShift = sortedEmployees.filter(
         (emp) => !restDayAssignments[emp.id]?.includes(day)
@@ -131,10 +138,11 @@ export const autoGenerateSchedule = (
       if (availableForShift.length === 0) {
         // Grab the employee with lowest hours from the rest pool
         const emergencyWorker = sortedEmployees[0];
-        // Remove from rest list
+        // Remove from rest list and clear their "Off" status
         restDayAssignments[emergencyWorker.id] = restDayAssignments[
           emergencyWorker.id
         ].filter((d) => d !== day);
+        delete scheduleData[emergencyWorker.id][day]; // Remove the "Off" we just set
         availableForShift = [emergencyWorker];
       }
 
@@ -197,13 +205,6 @@ export const autoGenerateSchedule = (
           addWorkHours(emp.id, emp.workingHours);
         });
       }
-
-      // Mark Rest days explicitly as "Off" in the schedule object
-      sortedEmployees.forEach((emp) => {
-        if (!scheduleData[emp.id][day]) {
-          scheduleData[emp.id][day] = "Off";
-        }
-      });
     });
   });
 
