@@ -13,6 +13,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 - ✅ **Custom Shifts** - Personalized time ranges (e.g., 9:00-17:30)
 - ✅ **Work Hours Analytics** - Track expected vs actual hours with overwork alerts
 - ✅ **Manual Hour Limits** - Override automatic monthly hour calculations per employee
+- ✅ **Change Tracking** - Visual indicators for manually modified shifts
 - ✅ **Bulgarian Holidays** - Automatic holiday detection and highlighting
 - ✅ **Authentication** - Secure login with read-only public mode
 - ✅ **Real-time Sync** - Firebase Firestore for live updates
@@ -121,6 +122,7 @@ Open http://localhost:5173
 - ✅ Add/remove employees
 - ✅ Assign shifts
 - ✅ **Set custom monthly hour limits** - Override automatic calculation (click ℹ️ icon → "Промени максимум")
+- ✅ **Track manual changes** - Modified shifts are highlighted with blue border and checkmark badge (✓), with "Промяна" tooltip. Only applies to shifts changed after initial setup.
 - ✅ **Auto-generate schedules** with intelligent rules:
   - **Large teams (9+ employees)**: 3 Morning + 5-6 Evening on weekends
   - **Medium teams (4-8 employees)**: ~2 Morning + rest Evening on weekends
@@ -146,6 +148,9 @@ schedules/
           "2025-11-01": "Morning",
           "2025-11-02": { type: "Custom", startTime: "09:00", endTime: "17:30" },
           "2025-11-03": "Night"
+        },
+        changedShifts: {  // Tracks manually modified shifts
+          "2025-11-02": true
         }
       }
     ]

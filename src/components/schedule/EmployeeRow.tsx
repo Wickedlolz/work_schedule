@@ -153,6 +153,7 @@ export const EmployeeRow = memo(
           const isHoliday = holidays.has(day);
           const isRedDay = isWeekend || isHoliday;
           const currentShift = employee.shifts[day] || "Off";
+          const isChanged = employee.changedShifts?.[day] || false;
           const conflictKey = `${employee.id}-${day}`;
           const hasConflict = conflicts.has(conflictKey);
           const conflictMessage = conflicts.get(conflictKey);
@@ -165,10 +166,22 @@ export const EmployeeRow = memo(
                 "border border-gray-300 p-1 text-center whitespace-nowrap relative",
                 isRedDay && "bg-red-50",
                 hasConflict && "bg-orange-100 border-orange-400 border-2",
+                isChanged && "bg-blue-50 border-blue-400 border-2",
                 getShiftColor(currentShift)
               )}
-              title={hasConflict ? conflictMessage : undefined}
+              title={
+                hasConflict
+                  ? conflictMessage
+                  : isChanged
+                  ? "Промяна"
+                  : undefined
+              }
             >
+              {isChanged && (
+                <div className="absolute -top-1 -left-1 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
+                  ✓
+                </div>
+              )}
               {hasConflict && (
                 <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
                   !

@@ -224,11 +224,23 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     if (!activeScheduleId || !activeSchedule) return;
 
     try {
-      const updatedEmployees = activeSchedule.employees.map((emp) =>
-        emp.id === employeeId
-          ? { ...emp, shifts: { ...emp.shifts, [date]: shift } }
-          : emp
-      );
+      const updatedEmployees = activeSchedule.employees.map((emp) => {
+        if (emp.id === employeeId) {
+          // Check if there was already a shift on this date
+          const hadPreviousShift =
+            emp.shifts[date] !== undefined && emp.shifts[date] !== null;
+
+          return {
+            ...emp,
+            shifts: { ...emp.shifts, [date]: shift },
+            // Only mark as changed if we're modifying an existing shift
+            changedShifts: hadPreviousShift
+              ? { ...emp.changedShifts, [date]: true }
+              : emp.changedShifts,
+          };
+        }
+        return emp;
+      });
 
       const scheduleRef = doc(db, "schedules", activeScheduleId);
 
