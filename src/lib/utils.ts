@@ -162,44 +162,49 @@ export const detectAllShiftConflicts = (
       }
 
       // Check for consecutive Night shifts with insufficient rest
-      // After a night shift, employee should have at least 2 days off
+      // After a sequence of night shifts ends, employee should have at least 2 days off
       if (shift === "Night") {
-        // Check next day
+        // Check if the next day is also a night shift (consecutive nights are allowed)
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
         const nextDateStr = nextDate.toISOString().split("T")[0];
         const nextShift = employee.shifts[nextDateStr];
 
-        if (
-          nextShift &&
-          nextShift !== "Off" &&
-          nextShift !== "Sick Leave" &&
-          nextShift !== "Vacation"
-        ) {
-          const key = `${employee.id}-${nextDateStr}`;
-          conflicts.set(
-            key,
-            "Внимание: Необходими са 2 дни почивка след нощна смяна"
-          );
-        }
+        // If next day is NOT a night shift, this is the end of night shift sequence
+        // Check that the next 2 days are rest days
+        if (nextShift !== "Night") {
+          // Check first day after night shift sequence
+          if (
+            nextShift &&
+            nextShift !== "Off" &&
+            nextShift !== "Sick Leave" &&
+            nextShift !== "Vacation"
+          ) {
+            const key = `${employee.id}-${date}`;
+            conflicts.set(
+              key,
+              "Внимание: Необходими са 2 дни почивка след нощна смяна"
+            );
+          }
 
-        // Check day after next (second day)
-        const secondDate = new Date(date);
-        secondDate.setDate(secondDate.getDate() + 2);
-        const secondDateStr = secondDate.toISOString().split("T")[0];
-        const secondShift = employee.shifts[secondDateStr];
+          // Check second day after night shift sequence
+          const secondDate = new Date(date);
+          secondDate.setDate(secondDate.getDate() + 2);
+          const secondDateStr = secondDate.toISOString().split("T")[0];
+          const secondShift = employee.shifts[secondDateStr];
 
-        if (
-          secondShift &&
-          secondShift !== "Off" &&
-          secondShift !== "Sick Leave" &&
-          secondShift !== "Vacation"
-        ) {
-          const key = `${employee.id}-${secondDateStr}`;
-          conflicts.set(
-            key,
-            "Внимание: Необходими са 2 дни почивка след нощна смяна"
-          );
+          if (
+            secondShift &&
+            secondShift !== "Off" &&
+            secondShift !== "Sick Leave" &&
+            secondShift !== "Vacation"
+          ) {
+            const key = `${employee.id}-${date}`;
+            conflicts.set(
+              key,
+              "Внимание: Необходими са 2 дни почивка след нощна смяна"
+            );
+          }
         }
       }
     });
