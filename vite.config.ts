@@ -11,5 +11,6 @@ export default defineConfig(({ command }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Set base path for GitHub Pages
   base: command === "build" ? "/work_schedule/" : "/",
 }));
