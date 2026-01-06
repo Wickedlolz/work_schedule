@@ -15,7 +15,7 @@ const AppContent = () => {
   }
 
   return (
-    <main className="w-full max-w-screen overflow-x-auto px-2 sm:px-4">
+    <main className="w-full max-w-screen overflow-x-auto px-2 sm:px-4 bg-[#F8F9FA]">
       <SchedulePage />
       <Toaster />
     </main>
