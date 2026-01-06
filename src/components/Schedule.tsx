@@ -5,12 +5,7 @@ import { exportToExcel, exportToPDF, generateMonthDays } from "@/lib/utils";
 import { autoGenerateSchedule } from "@/lib/autoGenerateSchedule";
 import { toast } from "sonner";
 import type { ShiftValue, WorkingHours } from "@/lib/types";
-import {
-  MIN_EMPLOYEES,
-  DEFAULT_LOCALE,
-  COLORS,
-  MESSAGES,
-} from "@/lib/constants";
+import { MIN_EMPLOYEES, DEFAULT_LOCALE, MESSAGES } from "@/lib/constants";
 
 import ScheduleTable from "./ScheduleTable";
 import ScheduleSelector from "./ScheduleSelector";
@@ -228,12 +223,7 @@ const SchedulePage = () => {
 
   return (
     <section className="space-y-4">
-      <Header
-        title={MESSAGES.title}
-        subtitle={monthLabel}
-        subtitleClassName={COLORS.PRIMARY_CLASS}
-        user={user}
-      />
+      <Header title={MESSAGES.title} subtitle={monthLabel} user={user} />
 
       <ScheduleSelector
         schedules={schedules}

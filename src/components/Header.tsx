@@ -23,16 +23,10 @@ const LoginButtonFallback = () => (
 interface HeaderProps {
   title: string;
   subtitle: string;
-  subtitleClassName?: string;
   user: User | null;
 }
 
-export const Header = ({
-  title,
-  subtitle,
-  subtitleClassName = "",
-  user,
-}: HeaderProps) => {
+export const Header = ({ title, subtitle, user }: HeaderProps) => {
   return (
     <div className="bg-white shadow-sm border-b border-gray-200 mb-6 px-4 py-4">
       <div className="flex items-center justify-between gap-4">
