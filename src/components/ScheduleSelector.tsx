@@ -12,17 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "./ui/alert-dialog";
-import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { Edit2, Check, X, Trash2 } from "lucide-react";
+import DeleteScheduleDialog from "./schedule/DeleteScheduleDialog";
+import { AddScheduleForm } from "./schedule/AddScheduleForm";
 
 interface ScheduleSelectorProps {
   schedules: Schedule[];
@@ -43,24 +35,11 @@ const ScheduleSelector = ({
   onRenameSchedule,
   isAuthenticated,
 }: ScheduleSelectorProps) => {
-  const [isAdding, setIsAdding] = useState<boolean>(false);
-  const [newScheduleName, setNewScheduleName] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>("");
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
 
   const activeSchedule = schedules.find((s) => s.id === activeScheduleId);
-
-  const handleAddSchedule = async () => {
-    if (!newScheduleName.trim()) return;
-    try {
-      await onAddSchedule(newScheduleName.trim());
-      setNewScheduleName("");
-      setIsAdding(false);
-    } catch (err) {
-      console.error("Failed to add schedule:", err);
-    }
-  };
 
   const handleRename = async () => {
     if (!activeScheduleId || !editName.trim()) return;
@@ -157,65 +136,7 @@ const ScheduleSelector = ({
             </span>
           </div>
 
-          {isAuthenticated &&
-            (isAdding ? (
-              <div
-                className="flex gap-2 items-center w-full sm:w-auto"
-                role="group"
-                aria-label="Add new schedule form"
-              >
-                <Input
-                  id="new-schedule-name"
-                  placeholder="Име на нов график"
-                  value={newScheduleName}
-                  onChange={(e) => setNewScheduleName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddSchedule();
-                    if (e.key === "Escape") {
-                      setIsAdding(false);
-                      setNewScheduleName("");
-                    }
-                  }}
-                  className="w-full sm:w-[200px]"
-                  autoFocus
-                  aria-label="New schedule name"
-                  aria-required="true"
-                  aria-invalid={
-                    !newScheduleName.trim() && newScheduleName.length > 0
-                  }
-                />
-                <Button
-                  onClick={handleAddSchedule}
-                  size="sm"
-                  aria-label="Confirm add schedule"
-                  disabled={!newScheduleName.trim()}
-                >
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only">Потвърди</span>
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsAdding(false);
-                    setNewScheduleName("");
-                  }}
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Cancel add schedule"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only">Откажи</span>
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={() => setIsAdding(true)}
-                size="sm"
-                aria-label="Add new schedule"
-              >
-                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-                Нов график
-              </Button>
-            ))}
+          {isAuthenticated && <AddScheduleForm onAddSchedule={onAddSchedule} />}
         </div>
 
         {activeScheduleId && activeSchedule && (
@@ -340,27 +261,12 @@ const ScheduleSelector = ({
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Изтриване на график</AlertDialogTitle>
-            <AlertDialogDescription>
-              Сигурни ли сте, че искате да изтриете "{activeSchedule?.name}"?
-              Това действие не може да бъде отменено.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Откажи</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Изтрий
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteScheduleDialog
+        showDeleteDialog={showDeleteDialog}
+        setShowDeleteDialog={setShowDeleteDialog}
+        activeSchedule={activeSchedule}
+        confirmDelete={confirmDelete}
+      />
     </section>
   );
 };
