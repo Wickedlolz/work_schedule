@@ -133,21 +133,39 @@ const ScheduleTable = ({
                 Часове/ден
               </th>
               {days.map((day) => {
-                const isWeekend = WEEKEND_DAYS.includes(
-                  new Date(day).getDay() as 0 | 6
-                );
+                const date = new Date(day);
+                const dayOfWeek = date.getDay();
+                const isWeekend = WEEKEND_DAYS.includes(dayOfWeek as 0 | 6);
                 const isHoliday = holidays.has(day);
                 const isRedDay = isWeekend || isHoliday;
+
+                // Bulgarian day abbreviations
+                const dayNames = [
+                  "Нд",
+                  "Пон",
+                  "Вто",
+                  "Сря",
+                  "Чет",
+                  "Пет",
+                  "Съб",
+                ];
+                const dayName = dayNames[dayOfWeek];
+
                 return (
                   <th
                     key={day}
                     className={cn(
-                      "text-center p-1 border border-gray-300 whitespace-nowrap",
+                      "text-center p-1 border border-gray-300 whitespace-nowrap text-xs",
                       isRedDay && "bg-red-100"
                     )}
                     scope="col"
                   >
-                    {new Date(day).getDate()}
+                    <div className="flex flex-col items-center">
+                      <span className="font-bold">{date.getDate()}</span>
+                      <span className="text-[10px] text-gray-600">
+                        {dayName}
+                      </span>
+                    </div>
                   </th>
                 );
               })}
@@ -173,20 +191,22 @@ const ScheduleTable = ({
 
       {/* Total Work Hours Summary */}
       {employees.length > 0 && (
-        <div className="mt-4 mb-3 text-center">
-          <p className="text-lg font-semibold text-gray-700">
-            Общо работни часове:{" "}
-            <span className="text-gray-900">
-              {employees.reduce((total, employee) => {
-                const workHoursStats = calculateEmployeeWorkHours(
-                  employee,
-                  days
-                );
-                return total + workHoursStats.actual;
-              }, 0)}
-              ч
-            </span>
-          </p>
+        <div className="mt-6 mb-4 flex justify-center">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 px-6 py-4">
+            <p className="text-base font-semibold text-gray-700">
+              Общо работни часове:{" "}
+              <span className="text-3xl font-bold text-rose-600 ml-2">
+                {employees.reduce((total, employee) => {
+                  const workHoursStats = calculateEmployeeWorkHours(
+                    employee,
+                    days
+                  );
+                  return total + workHoursStats.actual;
+                }, 0)}
+                ч
+              </span>
+            </p>
+          </div>
         </div>
       )}
 

@@ -41,7 +41,7 @@ export const ScheduleActions = ({
         <Button
           onClick={onAutoGenerate}
           variant="default"
-          className="cursor-pointer bg-green-600 hover:bg-green-700"
+          className="cursor-pointer bg-red-500 hover:bg-red-700"
         >
           {MESSAGES.autoGenerate.button}
         </Button>
