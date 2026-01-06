@@ -34,15 +34,17 @@ export const Header = ({
   user,
 }: HeaderProps) => {
   return (
-    <div className="relative text-xl sm:text-2xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-6 p-3 sm:p-4 border-b bg-linear-to-r from-red-50 via-white to-red-50">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <h1 className="text-center sm:text-left w-full sm:w-auto">
-          {title}{" "}
-          <span className={`${subtitleClassName} block sm:inline mt-1 sm:mt-0`}>
+    <div className="bg-white shadow-sm border-b border-gray-200 mb-6 px-4 py-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {title}
+          </h1>
+          <p className="text-base sm:text-lg text-gray-600 font-medium mt-1">
             {subtitle}
-          </span>
-        </h1>
-        <div className="shrink-0 w-full sm:w-auto flex justify-center sm:justify-end">
+          </p>
+        </div>
+        <div className="shrink-0">
           {user ? (
             <UserMenu />
           ) : (
