@@ -13,11 +13,11 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 - ✅ **Auto-Generate Schedules** - Intelligent algorithm adapts to any team size
 - ✅ **Custom Shifts** - Personalized time ranges (e.g., 9:00-17:30)
 - ✅ **Work Hours Analytics** - Track expected vs actual hours with overwork alerts
-- ✅ **Manual Hour Limits** - Override automatic monthly hour calculations per employee
 - ✅ **Change Tracking** - Visual indicators for manually modified shifts
 - ✅ **Bulgarian Holidays** - Automatic holiday detection and highlighting
 - ✅ **Authentication** - Secure login with read-only public mode
 - ✅ **Real-time Sync** - Firebase Firestore for live updates
+- ✅ **PWA Support** - Progressive Web App with offline support and installable
 - ✅ **Export** - PDF and Excel with full styling
 - ✅ **Mobile Responsive** - Works on all devices
 - ✅ **SEO Optimized** - Rich meta tags and structured data
