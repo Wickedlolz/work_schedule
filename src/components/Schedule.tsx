@@ -33,11 +33,11 @@ const SchedulePage = () => {
     addSchedule,
     deleteSchedule,
     renameSchedule,
+    duplicateSchedule,
     addEmployee: addEmployeeToFirebase,
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
     bulkUpdateShifts,
-    updateEmployeeMaxHours,
   } = useFirebaseSchedules();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -162,6 +162,27 @@ const SchedulePage = () => {
   };
 
   /**
+   * Handles duplicating an existing schedule
+   */
+  const handleDuplicateSchedule = async (
+    sourceId: string,
+    newName: string,
+    targetMonth: number,
+    targetYear: number,
+    copyEmployees: boolean,
+    copyShifts: boolean
+  ) => {
+    await duplicateSchedule(
+      sourceId,
+      newName,
+      targetMonth,
+      targetYear,
+      copyEmployees,
+      copyShifts
+    );
+  };
+
+  /**
    * Handles auto-generating schedule for the current month
    */
   const handleAutoGenerateSchedule = async () => {
@@ -232,6 +253,7 @@ const SchedulePage = () => {
         onAddSchedule={handleAddSchedule}
         onDeleteSchedule={deleteSchedule}
         onRenameSchedule={renameSchedule}
+        onDuplicateSchedule={handleDuplicateSchedule}
         isAuthenticated={!!user}
       />
 
@@ -279,7 +301,6 @@ const SchedulePage = () => {
             days={days}
             handleShiftChange={handleShiftChange}
             removeEmployee={handleRemoveEmployee}
-            updateEmployeeMaxHours={updateEmployeeMaxHours}
             tableRef={tableRef}
             isAuthenticated={!!user}
           />

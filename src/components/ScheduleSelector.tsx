@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import type { Schedule } from "@/lib/types";
 import { MESSAGES, MIN_SCHEDULES } from "@/lib/constants";
 
@@ -12,9 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Edit2, Check, X, Trash2 } from "lucide-react";
+import { Edit2, Check, X, Trash2, Copy } from "lucide-react";
 import DeleteScheduleDialog from "./schedule/DeleteScheduleDialog";
 import { AddScheduleForm } from "./schedule/AddScheduleForm";
+import { DuplicateScheduleDialog } from "./schedule/DuplicateScheduleDialog";
 
 interface ScheduleSelectorProps {
   schedules: Schedule[];
@@ -23,6 +25,14 @@ interface ScheduleSelectorProps {
   onAddSchedule: (name: string) => Promise<void>;
   onDeleteSchedule: (scheduleId: string) => Promise<void>;
   onRenameSchedule: (scheduleId: string, newName: string) => Promise<void>;
+  onDuplicateSchedule: (
+    sourceId: string,
+    newName: string,
+    targetMonth: number,
+    targetYear: number,
+    copyEmployees: boolean,
+    copyShifts: boolean
+  ) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -33,20 +43,35 @@ const ScheduleSelector = ({
   onAddSchedule,
   onDeleteSchedule,
   onRenameSchedule,
+  onDuplicateSchedule,
   isAuthenticated,
 }: ScheduleSelectorProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editName, setEditName] = useState<string>("");
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] =
+    useState<boolean>(false);
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { isSubmitting },
+  } = useForm<{ scheduleName: string }>({
+    defaultValues: {
+      scheduleName: "",
+    },
+  });
+
+  const scheduleName = watch("scheduleName");
   const activeSchedule = schedules.find((s) => s.id === activeScheduleId);
 
-  const handleRename = async () => {
-    if (!activeScheduleId || !editName.trim()) return;
+  const onSubmitRename = async (data: { scheduleName: string }) => {
+    if (!activeScheduleId) return;
     try {
-      await onRenameSchedule(activeScheduleId, editName.trim());
+      await onRenameSchedule(activeScheduleId, data.scheduleName.trim());
       setIsEditing(false);
-      setEditName("");
+      reset();
     } catch (err) {
       console.error("Failed to rename schedule:", err);
     }
@@ -78,16 +103,42 @@ const ScheduleSelector = ({
     }
   };
 
+  const handleDuplicate = async (
+    newName: string,
+    targetMonth: number,
+    targetYear: number,
+    copyEmployees: boolean,
+    copyShifts: boolean
+  ) => {
+    if (!activeScheduleId) return;
+
+    try {
+      await onDuplicateSchedule(
+        activeScheduleId,
+        newName,
+        targetMonth,
+        targetYear,
+        copyEmployees,
+        copyShifts
+      );
+      setShowDuplicateDialog(false);
+      toast.success("Графикът е дублиран успешно!");
+    } catch (err) {
+      toast.error("Грешка при дублиране на график");
+      console.error("Failed to duplicate schedule:", err);
+    }
+  };
+
   const startEditing = () => {
     if (activeSchedule) {
-      setEditName(activeSchedule.name);
+      reset({ scheduleName: activeSchedule.name });
       setIsEditing(true);
     }
   };
 
   const cancelEditing = () => {
     setIsEditing(false);
-    setEditName("");
+    reset();
   };
 
   return (
@@ -146,7 +197,8 @@ const ScheduleSelector = ({
             aria-label="Active schedule management"
           >
             {isEditing ? (
-              <div
+              <form
+                onSubmit={handleSubmit(onSubmitRename)}
                 className="flex flex-col sm:flex-row gap-2 items-start sm:items-center"
                 role="group"
                 aria-label="Rename schedule form"
@@ -160,28 +212,26 @@ const ScheduleSelector = ({
                 <div className="flex gap-2 items-center w-full sm:w-auto">
                   <Input
                     id="edit-schedule-name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                    {...register("scheduleName", { required: true })}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleRename();
                       if (e.key === "Escape") cancelEditing();
                     }}
                     className="w-full sm:w-[250px]"
                     autoFocus
                     aria-label="Edit schedule name"
                     aria-required="true"
-                    aria-invalid={!editName.trim() && editName.length > 0}
                   />
                   <Button
+                    type="submit"
                     size="sm"
-                    onClick={handleRename}
                     aria-label="Confirm rename schedule"
-                    disabled={!editName.trim()}
+                    disabled={!scheduleName.trim() || isSubmitting}
                   >
                     <Check className="h-4 w-4" aria-hidden="true" />
                     <span className="sr-only">Потвърди</span>
                   </Button>
                   <Button
+                    type="button"
                     size="sm"
                     variant="ghost"
                     onClick={cancelEditing}
@@ -191,7 +241,7 @@ const ScheduleSelector = ({
                     <span className="sr-only">Откажи</span>
                   </Button>
                 </div>
-              </div>
+              </form>
             ) : (
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                 <div
@@ -222,6 +272,16 @@ const ScheduleSelector = ({
                     >
                       <Edit2 className="h-4 w-4 mr-1" aria-hidden="true" />
                       Преименувай
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowDuplicateDialog(true)}
+                      className="cursor-pointer"
+                      aria-label={`Duplicate schedule ${activeSchedule.name}`}
+                    >
+                      <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
+                      Дублирай
                     </Button>
                     <Button
                       size="sm"
@@ -266,6 +326,13 @@ const ScheduleSelector = ({
         setShowDeleteDialog={setShowDeleteDialog}
         activeSchedule={activeSchedule}
         confirmDelete={confirmDelete}
+      />
+
+      <DuplicateScheduleDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        sourceSchedule={activeSchedule || null}
+        onConfirm={handleDuplicate}
       />
     </section>
   );

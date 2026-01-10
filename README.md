@@ -9,6 +9,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 ## 📌 Key Features
 
 - ✅ **Multiple Schedules** - Create and manage unlimited work schedules
+- ✅ **Duplicate Schedules** - Clone schedules with flexible copy options (employees, shifts, or both)
 - ✅ **Auto-Generate Schedules** - Intelligent algorithm adapts to any team size
 - ✅ **Custom Shifts** - Personalized time ranges (e.g., 9:00-17:30)
 - ✅ **Work Hours Analytics** - Track expected vs actual hours with overwork alerts
@@ -119,6 +120,10 @@ Open http://localhost:5173
 
 - ✅ All public features
 - ✅ Create/edit/delete schedules
+- ✅ **Duplicate schedules** - Clone existing schedules with flexible options:
+  - **Copy employees only**: Creates new empty schedule with same team (useful for new months)
+  - **Copy employees + shifts**: Exact clone with all shifts adjusted to target month/year (perfect for recurring schedules)
+  - Specify target month/year when duplicating
 - ✅ Add/remove employees
 - ✅ Assign shifts
 - ✅ **Set custom monthly hour limits** - Override automatic calculation (click ℹ️ icon → "Промени максимум")

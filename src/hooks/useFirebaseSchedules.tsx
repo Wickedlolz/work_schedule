@@ -24,6 +24,14 @@ interface UseFirebaseSchedulesReturn {
   addSchedule: (name: string) => Promise<string | undefined>;
   deleteSchedule: (id: string) => Promise<void>;
   renameSchedule: (id: string, newName: string) => Promise<void>;
+  duplicateSchedule: (
+    sourceId: string,
+    newName: string,
+    targetMonth: number,
+    targetYear: number,
+    copyEmployees: boolean,
+    copyShifts: boolean
+  ) => Promise<string | undefined>;
   addEmployee: (name: string, workingHours?: WorkingHours) => Promise<void>;
   removeEmployee: (employeeId: string) => Promise<void>;
   updateShift: (
@@ -33,10 +41,6 @@ interface UseFirebaseSchedulesReturn {
   ) => Promise<void>;
   bulkUpdateShifts: (
     shiftsData: Record<string, Record<string, ShiftValue>>
-  ) => Promise<void>;
-  updateEmployeeMaxHours: (
-    employeeId: string,
-    maxMonthlyHours: number | undefined
   ) => Promise<void>;
 }
 
@@ -165,6 +169,79 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     }
   };
 
+  // Duplicate schedule
+  const duplicateSchedule = async (
+    sourceId: string,
+    newName: string,
+    targetMonth: number,
+    targetYear: number,
+    copyEmployees: boolean,
+    copyShifts: boolean
+  ): Promise<string | undefined> => {
+    try {
+      // Find source schedule
+      const sourceSchedule = schedules.find((s) => s.id === sourceId);
+      if (!sourceSchedule) {
+        throw new Error("Source schedule not found");
+      }
+
+      // Helper function to adjust date from source month to target month
+      const adjustDate = (dateStr: string): string => {
+        const [, , day] = dateStr.split("-").map(Number);
+        // Keep the same day, but change month/year to target
+        // targetMonth is 0-indexed (0-11), so we need to add 1 for the date string
+        return `${targetYear}-${String(targetMonth + 1).padStart(
+          2,
+          "0"
+        )}-${String(day).padStart(2, "0")}`;
+      };
+
+      // Prepare employees for new schedule
+      let newEmployees: Employee[] = [];
+
+      if (copyEmployees) {
+        // Copy employees with new IDs
+        newEmployees = sourceSchedule.employees.map((emp) => {
+          const newEmployee: Employee = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: emp.name,
+            workingHours: emp.workingHours,
+            shifts: {},
+          };
+
+          // If copyShifts is true, copy and adjust shift dates
+          if (copyShifts) {
+            const adjustedShifts: Record<string, ShiftValue> = {};
+            Object.entries(emp.shifts).forEach(([dateStr, shift]) => {
+              const newDate = adjustDate(dateStr);
+              adjustedShifts[newDate] = shift;
+            });
+            newEmployee.shifts = adjustedShifts;
+            // Don't copy changedShifts - these are fresh shifts
+          }
+
+          return newEmployee;
+        });
+      }
+
+      // Create new schedule
+      const newSchedule: Omit<Schedule, "id"> = {
+        name: newName,
+        employees: newEmployees,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, "schedules"), newSchedule);
+      setActiveScheduleIdInternal(docRef.id);
+      return docRef.id;
+    } catch (err) {
+      console.error("Error duplicating schedule:", err);
+      setError("Failed to duplicate schedule");
+      throw err;
+    }
+  };
+
   // Add employee to active schedule
   const addEmployee = async (
     name: string,
@@ -280,40 +357,6 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     }
   };
 
-  // Update employee max monthly hours
-  const updateEmployeeMaxHours = async (
-    employeeId: string,
-    maxMonthlyHours: number | undefined
-  ) => {
-    if (!activeScheduleId || !activeSchedule) return;
-
-    try {
-      const updatedEmployees = activeSchedule.employees.map((emp) => {
-        if (emp.id === employeeId) {
-          if (maxMonthlyHours === undefined) {
-            // Remove the maxMonthlyHours field
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { maxMonthlyHours: _, ...empWithoutMaxHours } = emp;
-            return empWithoutMaxHours;
-          }
-          return { ...emp, maxMonthlyHours };
-        }
-        return emp;
-      });
-
-      const scheduleRef = doc(db, "schedules", activeScheduleId);
-
-      await updateDoc(scheduleRef, {
-        employees: updatedEmployees,
-        updatedAt: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error("Error updating employee max hours:", err);
-      setError("Failed to update employee max hours");
-      throw err;
-    }
-  };
-
   // Wrapper function that sets switching state before changing schedule
   const setActiveScheduleId = (id: string | null) => {
     setSwitchingSchedule(true);
@@ -331,10 +374,10 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     addSchedule,
     deleteSchedule,
     renameSchedule,
+    duplicateSchedule,
     addEmployee,
     removeEmployee,
     updateShift,
     bulkUpdateShifts,
-    updateEmployeeMaxHours,
   };
 }

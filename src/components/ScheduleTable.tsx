@@ -29,10 +29,6 @@ interface ScheduleTableProps {
     value: ShiftValue
   ) => void;
   removeEmployee: (id: string) => void;
-  updateEmployeeMaxHours: (
-    employeeId: string,
-    maxMonthlyHours: number | undefined
-  ) => Promise<void>;
   tableRef: React.RefObject<HTMLTableElement | null>;
   isAuthenticated: boolean;
 }
@@ -42,7 +38,6 @@ const ScheduleTable = ({
   days,
   handleShiftChange,
   removeEmployee,
-  updateEmployeeMaxHours,
   tableRef,
   isAuthenticated,
 }: ScheduleTableProps) => {
@@ -219,9 +214,7 @@ const ScheduleTable = ({
           employees.find((e) => e.id === workHoursModal.employeeId) || null
         }
         days={days}
-        isAuthenticated={isAuthenticated}
         onClose={() => setWorkHoursModal({ open: false, employeeId: "" })}
-        onUpdateMaxHours={updateEmployeeMaxHours}
       />
 
       <CustomShiftModal

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +12,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import type { CustomShift } from "@/lib/types";
+
+interface CustomShiftFormData {
+  startTime: string;
+  endTime: string;
+}
 
 interface CustomShiftModalProps {
   open: boolean;
@@ -27,100 +33,114 @@ export const CustomShiftModal = ({
   initialStartTime = "09:00",
   initialEndTime = "17:30",
 }: CustomShiftModalProps) => {
-  const [startTime, setStartTime] = useState(initialStartTime);
-  const [endTime, setEndTime] = useState(initialEndTime);
-  const [error, setError] = useState<string>("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<CustomShiftFormData>({
+    defaultValues: {
+      startTime: initialStartTime,
+      endTime: initialEndTime,
+    },
+  });
 
-  const validateTimes = (): boolean => {
-    if (!startTime || !endTime) {
-      setError("Моля, въведете начален и краен час");
-      return false;
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      reset({
+        startTime: initialStartTime,
+        endTime: initialEndTime,
+      });
     }
+  }, [open, initialStartTime, initialEndTime, reset]);
 
+  const onSubmit = (data: CustomShiftFormData) => {
     // Convert times to minutes for comparison
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    const [endHour, endMin] = endTime.split(":").map(Number);
+    const [startHour, startMin] = data.startTime.split(":").map(Number);
+    const [endHour, endMin] = data.endTime.split(":").map(Number);
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
 
     if (startMinutes >= endMinutes) {
-      setError("Началният час трябва да е преди крайния");
-      return false;
-    }
-
-    setError("");
-    return true;
-  };
-
-  const handleSave = () => {
-    if (!validateTimes()) {
+      setError("root", {
+        type: "manual",
+        message: "Началният час трябва да е преди крайния",
+      });
       return;
     }
 
     onSave({
       type: "Custom",
-      startTime,
-      endTime,
+      startTime: data.startTime,
+      endTime: data.endTime,
     });
 
     onOpenChange(false);
   };
 
   const handleCancel = () => {
-    setError("");
-    setStartTime(initialStartTime);
-    setEndTime(initialEndTime);
+    reset();
+    clearErrors();
     onOpenChange(false);
   };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Персонализирана смяна</AlertDialogTitle>
-          <AlertDialogDescription>
-            Въведете начален и краен час за персонализираната смяна
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <label htmlFor="startTime" className="text-sm font-medium">
-              Начален час
-            </label>
-            <Input
-              id="startTime"
-              type="time"
-              value={startTime}
-              onChange={(e) => {
-                setStartTime(e.target.value);
-                setError("");
-              }}
-            />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Персонализирана смяна</AlertDialogTitle>
+            <AlertDialogDescription>
+              Въведете начален и краен час за персонализираната смяна
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="startTime" className="text-sm font-medium">
+                Начален час
+              </label>
+              <Input
+                id="startTime"
+                type="time"
+                {...register("startTime", { required: true })}
+                onChange={(e) => {
+                  clearErrors();
+                  // Call the default onChange from register
+                  register("startTime").onChange(e);
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="endTime" className="text-sm font-medium">
+                Краен час
+              </label>
+              <Input
+                id="endTime"
+                type="time"
+                {...register("endTime", { required: true })}
+                onChange={(e) => {
+                  clearErrors();
+                  // Call the default onChange from register
+                  register("endTime").onChange(e);
+                }}
+              />
+            </div>
+            {errors.root && (
+              <p className="text-sm text-red-600" role="alert">
+                {errors.root.message}
+              </p>
+            )}
           </div>
-          <div className="grid gap-2">
-            <label htmlFor="endTime" className="text-sm font-medium">
-              Краен час
-            </label>
-            <Input
-              id="endTime"
-              type="time"
-              value={endTime}
-              onChange={(e) => {
-                setEndTime(e.target.value);
-                setError("");
-              }}
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          )}
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>Отказ</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSave}>Запази</AlertDialogAction>
-        </AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" onClick={handleCancel}>
+              Откажи
+            </AlertDialogCancel>
+            <AlertDialogAction type="submit">Запази</AlertDialogAction>
+          </AlertDialogFooter>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   );
