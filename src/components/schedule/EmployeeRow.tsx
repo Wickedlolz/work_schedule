@@ -72,7 +72,7 @@ export const EmployeeRow = memo(
   }: EmployeeRowProps) => {
     const workHoursStats = useMemo(
       () => calculateEmployeeWorkHours(employee, days),
-      [employee, days]
+      [employee, days],
     );
 
     const isOverworked = workHoursStats.isOverworked;
@@ -95,7 +95,7 @@ export const EmployeeRow = memo(
                 "cursor-pointer text-sm hover:scale-110 transition-all relative",
                 isOverworked
                   ? "text-red-500 hover:text-red-700 animate-pulse"
-                  : "text-blue-500 hover:text-blue-700"
+                  : "text-blue-500 hover:text-blue-700",
               )}
               aria-label="Покажи работни часове"
               title={
@@ -148,15 +148,27 @@ export const EmployeeRow = memo(
         </td>
         {days.map((day) => {
           const isWeekend = WEEKEND_DAYS.includes(
-            new Date(day).getDay() as 0 | 6
+            new Date(day).getDay() as 0 | 6,
           );
           const isHoliday = holidays.has(day);
           const isRedDay = isWeekend || isHoliday;
           const currentShift = employee.shifts[day] || "Off";
-          const isChanged = employee.changedShifts?.[day] || false;
+          const changeCount = employee.changedShifts?.[day] || 0;
+          const isChanged = changeCount > 0;
           const conflictKey = `${employee.id}-${day}`;
           const hasConflict = conflicts.has(conflictKey);
           const conflictMessage = conflicts.get(conflictKey);
+
+          // Determine badge color based on change count
+          let badgeColor = "bg-blue-500";
+          let borderColor = "border-blue-400";
+          if (changeCount >= 6) {
+            badgeColor = "bg-red-600";
+            borderColor = "border-red-500";
+          } else if (changeCount >= 3) {
+            badgeColor = "bg-orange-500";
+            borderColor = "border-orange-500";
+          }
 
           return (
             <td
@@ -166,20 +178,34 @@ export const EmployeeRow = memo(
                 "border border-gray-300 p-1 text-center whitespace-nowrap relative",
                 isRedDay && "bg-red-50",
                 hasConflict && "bg-orange-100 border-orange-400 border-2",
-                isChanged && "bg-blue-50 border-blue-400 border-2",
-                getShiftColor(currentShift)
+                isChanged &&
+                  changeCount < 3 &&
+                  "bg-blue-50 border-blue-400 border-2",
+                isChanged &&
+                  changeCount >= 3 &&
+                  changeCount < 6 &&
+                  "bg-orange-50 border-orange-500 border-2",
+                isChanged &&
+                  changeCount >= 6 &&
+                  "bg-red-50 border-red-500 border-2",
+                getShiftColor(currentShift),
               )}
               title={
                 hasConflict
                   ? conflictMessage
                   : isChanged
-                  ? "Промяна"
-                  : undefined
+                    ? `Променена ${changeCount} ${changeCount === 1 ? "път" : changeCount < 5 ? "пъти" : "пъти"}`
+                    : undefined
               }
             >
               {isChanged && (
-                <div className="absolute -top-1 -left-1 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
-                  ✓
+                <div
+                  className={cn(
+                    "absolute -top-1 -left-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10",
+                    badgeColor,
+                  )}
+                >
+                  {changeCount}
                 </div>
               )}
               {hasConflict && (
@@ -197,7 +223,7 @@ export const EmployeeRow = memo(
                   <SelectTrigger
                     className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
                     aria-label={`Смяна за ${employee.name} на ${new Date(
-                      day
+                      day,
                     ).toLocaleDateString("bg-BG")}`}
                   >
                     <SelectValue placeholder="Изберете смяна">
@@ -226,7 +252,7 @@ export const EmployeeRow = memo(
         })}
       </tr>
     );
-  }
+  },
 );
 
 EmployeeRow.displayName = "EmployeeRow";

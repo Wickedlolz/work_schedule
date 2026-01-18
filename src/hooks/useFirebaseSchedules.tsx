@@ -30,17 +30,17 @@ interface UseFirebaseSchedulesReturn {
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ) => Promise<string | undefined>;
   addEmployee: (name: string, workingHours?: WorkingHours) => Promise<void>;
   removeEmployee: (employeeId: string) => Promise<void>;
   updateShift: (
     employeeId: string,
     date: string,
-    shift: ShiftValue
+    shift: ShiftValue,
   ) => Promise<void>;
   bulkUpdateShifts: (
-    shiftsData: Record<string, Record<string, ShiftValue>>
+    shiftsData: Record<string, Record<string, ShiftValue>>,
   ) => Promise<void>;
 }
 
@@ -65,7 +65,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
       window.history.replaceState(
         {},
         "",
-        `${window.location.pathname}?${params.toString()}`
+        `${window.location.pathname}?${params.toString()}`,
       );
     }
   }, [activeScheduleId]);
@@ -107,7 +107,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         console.error("Error fetching schedules:", err);
         setError(err.message);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -144,7 +144,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
       if (id === activeScheduleId) {
         const remaining = schedules.filter((s) => s.id !== id);
         setActiveScheduleIdInternal(
-          remaining.length > 0 ? remaining[0].id : null
+          remaining.length > 0 ? remaining[0].id : null,
         );
       }
     } catch (err) {
@@ -176,7 +176,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ): Promise<string | undefined> => {
     try {
       // Find source schedule
@@ -192,7 +192,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         // targetMonth is 0-indexed (0-11), so we need to add 1 for the date string
         return `${targetYear}-${String(targetMonth + 1).padStart(
           2,
-          "0"
+          "0",
         )}-${String(day).padStart(2, "0")}`;
       };
 
@@ -245,7 +245,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
   // Add employee to active schedule
   const addEmployee = async (
     name: string,
-    workingHours: WorkingHours = DEFAULT_WORKING_HOURS
+    workingHours: WorkingHours = DEFAULT_WORKING_HOURS,
   ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
@@ -277,7 +277,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
 
     try {
       const updatedEmployees = activeSchedule.employees.filter(
-        (e) => e.id !== employeeId
+        (e) => e.id !== employeeId,
       );
       const scheduleRef = doc(db, "schedules", activeScheduleId);
 
@@ -296,7 +296,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
   const updateShift = async (
     employeeId: string,
     date: string,
-    shift: ShiftValue
+    shift: ShiftValue,
   ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
@@ -307,12 +307,15 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
           const hadPreviousShift =
             emp.shifts[date] !== undefined && emp.shifts[date] !== null;
 
+          // Get current change count and increment it
+          const currentCount = emp.changedShifts?.[date] || 0;
+
           return {
             ...emp,
             shifts: { ...emp.shifts, [date]: shift },
-            // Only mark as changed if we're modifying an existing shift
+            // Only increment change count if we're modifying an existing shift
             changedShifts: hadPreviousShift
-              ? { ...emp.changedShifts, [date]: true }
+              ? { ...emp.changedShifts, [date]: currentCount + 1 }
               : emp.changedShifts,
           };
         }
@@ -334,7 +337,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
 
   // Bulk update shifts for auto-generated schedule
   const bulkUpdateShifts = async (
-    shiftsData: Record<string, Record<string, ShiftValue>>
+    shiftsData: Record<string, Record<string, ShiftValue>>,
   ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
