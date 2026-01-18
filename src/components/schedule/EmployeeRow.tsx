@@ -161,13 +161,10 @@ export const EmployeeRow = memo(
 
           // Determine badge color based on change count
           let badgeColor = "bg-blue-500";
-          let borderColor = "border-blue-400";
           if (changeCount >= 6) {
             badgeColor = "bg-red-600";
-            borderColor = "border-red-500";
           } else if (changeCount >= 3) {
             badgeColor = "bg-orange-500";
-            borderColor = "border-orange-500";
           }
 
           return (
