@@ -38,6 +38,7 @@ interface UseFirebaseSchedulesReturn {
     employeeId: string,
     date: string,
     shift: ShiftValue,
+    message?: string | null,
   ) => Promise<void>;
   bulkUpdateShifts: (
     shiftsData: Record<string, Record<string, ShiftValue>>,
@@ -297,6 +298,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     employeeId: string,
     date: string,
     shift: ShiftValue,
+    message?: string | null,
   ) => {
     if (!activeScheduleId || !activeSchedule) return;
 
@@ -310,7 +312,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
           // Get current change count and increment it
           const currentCount = emp.changedShifts?.[date] || 0;
 
-          return {
+          const updatedEmployee: any = {
             ...emp,
             shifts: { ...emp.shifts, [date]: shift },
             // Only increment change count if we're modifying an existing shift
@@ -318,6 +320,35 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
               ? { ...emp.changedShifts, [date]: currentCount + 1 }
               : emp.changedShifts,
           };
+
+          // Handle custom message for shift changes
+          if (hadPreviousShift) {
+            if (message === null) {
+              // Remove message if null (user cleared it)
+              if (emp.shiftMessages && emp.shiftMessages[date]) {
+                const { [date]: _, ...remainingMessages } = emp.shiftMessages;
+                // Always set shiftMessages to the remaining messages (even if empty)
+                updatedEmployee.shiftMessages = remainingMessages;
+              } else if (emp.shiftMessages) {
+                // Keep existing messages if the date doesn't have a message
+                updatedEmployee.shiftMessages = emp.shiftMessages;
+              }
+            } else if (message) {
+              // Save new/updated message
+              updatedEmployee.shiftMessages = {
+                ...emp.shiftMessages,
+                [date]: message,
+              };
+            } else if (emp.shiftMessages) {
+              // Keep existing messages unchanged
+              updatedEmployee.shiftMessages = emp.shiftMessages;
+            }
+          } else if (emp.shiftMessages) {
+            // First-time assignment, keep existing messages
+            updatedEmployee.shiftMessages = emp.shiftMessages;
+          }
+
+          return updatedEmployee;
         }
         return emp;
       });

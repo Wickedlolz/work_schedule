@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { cn, calculateEmployeeWorkHours } from "@/lib/utils";
 import type { Employee, ShiftType, ShiftValue } from "@/lib/types";
 import {
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { ShiftChangeDialog } from "./ShiftChangeDialog";
 
 type EmployeeRowProps = {
   employee: Employee;
@@ -33,7 +34,12 @@ type EmployeeRowProps = {
   holidays: Set<string>;
   conflicts: Map<string, string>;
   isAuthenticated: boolean;
-  onShiftChange: (employeeId: string, date: string, value: ShiftType) => void;
+  onShiftChange: (
+    employeeId: string,
+    date: string,
+    value: ShiftType,
+    message?: string | null,
+  ) => void;
   onRemove: (employeeId: string) => void;
   onWorkHoursClick: (employeeId: string) => void;
 };
@@ -70,6 +76,19 @@ export const EmployeeRow = memo(
     onRemove,
     onWorkHoursClick,
   }: EmployeeRowProps) => {
+    const [shiftChangeDialog, setShiftChangeDialog] = useState<{
+      isOpen: boolean;
+      employeeId: string;
+      date: string;
+      newShift: ShiftType;
+      existingMessage?: string;
+    }>({
+      isOpen: false,
+      employeeId: "",
+      date: "",
+      newShift: "Off",
+    });
+
     const workHoursStats = useMemo(
       () => calculateEmployeeWorkHours(employee, days),
       [employee, days],
@@ -77,177 +96,229 @@ export const EmployeeRow = memo(
 
     const isOverworked = workHoursStats.isOverworked;
 
+    const handleShiftChangeRequest = (
+      employeeId: string,
+      date: string,
+      newShift: ShiftType,
+    ) => {
+      // Check if this is a change (not first-time assignment)
+      const existingShift = employee.shifts[date];
+      if (existingShift !== undefined && existingShift !== null) {
+        // Get existing message if any
+        const existingMessage = employee.shiftMessages?.[date];
+        // Open dialog for message
+        setShiftChangeDialog({
+          isOpen: true,
+          employeeId,
+          date,
+          newShift,
+          existingMessage,
+        });
+      } else {
+        // First-time assignment, no dialog needed
+        onShiftChange(employeeId, date, newShift);
+      }
+    };
+
+    const handleConfirmShiftChange = (message?: string | null) => {
+      onShiftChange(
+        shiftChangeDialog.employeeId,
+        shiftChangeDialog.date,
+        shiftChangeDialog.newShift,
+        message,
+      );
+    };
+
     return (
-      <tr role="row" className="border-t border-gray-200">
-        <td
-          role="cell"
-          className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap"
-        >
-          <div className="flex items-center justify-center gap-1 relative">
-            <span>{employee.name}</span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onWorkHoursClick(employee.id);
-              }}
-              className={cn(
-                "cursor-pointer text-sm hover:scale-110 transition-all relative",
-                isOverworked
-                  ? "text-red-500 hover:text-red-700 animate-pulse"
-                  : "text-blue-500 hover:text-blue-700",
+      <>
+        <tr role="row" className="border-t border-gray-200">
+          <td
+            role="cell"
+            className="sticky left-0 z-10 bg-white p-2 border border-gray-300 font-medium text-center whitespace-nowrap"
+          >
+            <div className="flex items-center justify-center gap-1 relative">
+              <span>{employee.name}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  onWorkHoursClick(employee.id);
+                }}
+                className={cn(
+                  "cursor-pointer text-sm hover:scale-110 transition-all relative",
+                  isOverworked
+                    ? "text-red-500 hover:text-red-700 animate-pulse"
+                    : "text-blue-500 hover:text-blue-700",
+                )}
+                aria-label="Покажи работни часове"
+                title={
+                  isOverworked
+                    ? "⚠️ Служителят е с повече часове от очакваното!"
+                    : "Покажи работни часове"
+                }
+              >
+                {isOverworked ? "⚠️" : "ℹ️"}
+              </button>
+              {isAuthenticated && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-1 text-red-500 cursor-pointer"
+                      aria-label={`Изтриване на ${employee.name}`}
+                    >
+                      ✕
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent role="alertdialog" aria-modal="true">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Сигурни ли сте, че искате да изтриете този служител?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Това действие е необратимо. След като служителят бъде
+                        изтрит, всички свързани данни с неговите смени ще бъдат
+                        премахнати от системата.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отказ</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onRemove(employee.id)}>
+                        Изтрий
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
-              aria-label="Покажи работни часове"
-              title={
-                isOverworked
-                  ? "⚠️ Служителят е с повече часове от очакваното!"
-                  : "Покажи работни часове"
-              }
-            >
-              {isOverworked ? "⚠️" : "ℹ️"}
-            </button>
-            {isAuthenticated && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-1 text-red-500 cursor-pointer"
-                    aria-label={`Изтриване на ${employee.name}`}
-                  >
-                    ✕
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent role="alertdialog" aria-modal="true">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Сигурни ли сте, че искате да изтриете този служител?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Това действие е необратимо. След като служителят бъде
-                      изтрит, всички свързани данни с неговите смени ще бъдат
-                      премахнати от системата.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Отказ</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onRemove(employee.id)}>
-                      Изтрий
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        </td>
-        <td
-          role="cell"
-          className="bg-white p-2 border border-gray-300 text-center whitespace-nowrap font-semibold text-blue-600"
-        >
-          {employee.workingHours}ч
-        </td>
-        {days.map((day) => {
-          const isWeekend = WEEKEND_DAYS.includes(
-            new Date(day).getDay() as 0 | 6,
-          );
-          const isHoliday = holidays.has(day);
-          const isRedDay = isWeekend || isHoliday;
-          const currentShift = employee.shifts[day] || "Off";
-          const changeCount = employee.changedShifts?.[day] || 0;
-          const isChanged = changeCount > 0;
-          const conflictKey = `${employee.id}-${day}`;
-          const hasConflict = conflicts.has(conflictKey);
-          const conflictMessage = conflicts.get(conflictKey);
+            </div>
+          </td>
+          <td
+            role="cell"
+            className="bg-white p-2 border border-gray-300 text-center whitespace-nowrap font-semibold text-blue-600"
+          >
+            {employee.workingHours}ч
+          </td>
+          {days.map((day) => {
+            const isWeekend = WEEKEND_DAYS.includes(
+              new Date(day).getDay() as 0 | 6,
+            );
+            const isHoliday = holidays.has(day);
+            const isRedDay = isWeekend || isHoliday;
+            const currentShift = employee.shifts[day] || "Off";
+            const changeCount = employee.changedShifts?.[day] || 0;
+            const isChanged = changeCount > 0;
+            const conflictKey = `${employee.id}-${day}`;
+            const hasConflict = conflicts.has(conflictKey);
+            const conflictMessage = conflicts.get(conflictKey);
+            const customMessage = employee.shiftMessages?.[day];
 
-          // Determine badge color based on change count
-          let badgeColor = "bg-blue-500";
-          if (changeCount >= 6) {
-            badgeColor = "bg-red-600";
-          } else if (changeCount >= 3) {
-            badgeColor = "bg-orange-500";
+            // Determine badge color based on change count
+            let badgeColor = "bg-blue-500";
+            if (changeCount >= 6) {
+              badgeColor = "bg-red-600";
+            } else if (changeCount >= 3) {
+              badgeColor = "bg-orange-500";
+            }
+
+            // Build tooltip text
+            let tooltipText: string | undefined;
+            if (hasConflict) {
+              tooltipText = conflictMessage;
+            } else if (isChanged) {
+              const changesText = `Променена ${changeCount} ${changeCount === 1 ? "път" : changeCount < 5 ? "пъти" : "пъти"}`;
+              tooltipText = customMessage
+                ? `${changesText} \n ${customMessage}`
+                : changesText;
+            }
+
+            return (
+              <td
+                key={day}
+                role="cell"
+                className={cn(
+                  "border border-gray-300 p-1 text-center whitespace-nowrap relative",
+                  isRedDay && "bg-red-50",
+                  hasConflict && "bg-orange-100 border-orange-400 border-2",
+                  isChanged &&
+                    changeCount < 3 &&
+                    "bg-blue-50 border-blue-400 border-2",
+                  isChanged &&
+                    changeCount >= 3 &&
+                    changeCount < 6 &&
+                    "bg-orange-50 border-orange-500 border-2",
+                  isChanged &&
+                    changeCount >= 6 &&
+                    "bg-red-50 border-red-500 border-2",
+                  getShiftColor(currentShift),
+                )}
+                title={tooltipText}
+              >
+                {isChanged && (
+                  <div
+                    className={cn(
+                      "absolute -top-1 -left-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10",
+                      badgeColor,
+                    )}
+                  >
+                    {changeCount}
+                  </div>
+                )}
+                {hasConflict && (
+                  <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
+                    !
+                  </div>
+                )}
+                {isAuthenticated ? (
+                  <Select
+                    value={getShiftValue(currentShift)}
+                    onValueChange={(val: ShiftType) =>
+                      handleShiftChangeRequest(employee.id, day, val)
+                    }
+                  >
+                    <SelectTrigger
+                      className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
+                      aria-label={`Смяна за ${employee.name} на ${new Date(
+                        day,
+                      ).toLocaleDateString("bg-BG")}`}
+                    >
+                      <SelectValue placeholder="Изберете смяна">
+                        {getShiftDisplay(currentShift)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SHIFT_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option}
+                          value={option}
+                          className="text-xs"
+                        >
+                          {SHIFT_LABELS_BG[option]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-xs sm:text-sm">
+                    {getShiftDisplay(currentShift)}
+                  </span>
+                )}
+              </td>
+            );
+          })}
+        </tr>
+        <ShiftChangeDialog
+          isOpen={shiftChangeDialog.isOpen}
+          onClose={() =>
+            setShiftChangeDialog((prev) => ({ ...prev, isOpen: false }))
           }
-
-          return (
-            <td
-              key={day}
-              role="cell"
-              className={cn(
-                "border border-gray-300 p-1 text-center whitespace-nowrap relative",
-                isRedDay && "bg-red-50",
-                hasConflict && "bg-orange-100 border-orange-400 border-2",
-                isChanged &&
-                  changeCount < 3 &&
-                  "bg-blue-50 border-blue-400 border-2",
-                isChanged &&
-                  changeCount >= 3 &&
-                  changeCount < 6 &&
-                  "bg-orange-50 border-orange-500 border-2",
-                isChanged &&
-                  changeCount >= 6 &&
-                  "bg-red-50 border-red-500 border-2",
-                getShiftColor(currentShift),
-              )}
-              title={
-                hasConflict
-                  ? conflictMessage
-                  : isChanged
-                    ? `Променена ${changeCount} ${changeCount === 1 ? "път" : changeCount < 5 ? "пъти" : "пъти"}`
-                    : undefined
-              }
-            >
-              {isChanged && (
-                <div
-                  className={cn(
-                    "absolute -top-1 -left-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10",
-                    badgeColor,
-                  )}
-                >
-                  {changeCount}
-                </div>
-              )}
-              {hasConflict && (
-                <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
-                  !
-                </div>
-              )}
-              {isAuthenticated ? (
-                <Select
-                  value={getShiftValue(currentShift)}
-                  onValueChange={(val: ShiftType) =>
-                    onShiftChange(employee.id, day, val)
-                  }
-                >
-                  <SelectTrigger
-                    className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
-                    aria-label={`Смяна за ${employee.name} на ${new Date(
-                      day,
-                    ).toLocaleDateString("bg-BG")}`}
-                  >
-                    <SelectValue placeholder="Изберете смяна">
-                      {getShiftDisplay(currentShift)}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SHIFT_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option}
-                        value={option}
-                        className="text-xs"
-                      >
-                        {SHIFT_LABELS_BG[option]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="text-xs sm:text-sm">
-                  {getShiftDisplay(currentShift)}
-                </span>
-              )}
-            </td>
-          );
-        })}
-      </tr>
+          onConfirm={handleConfirmShiftChange}
+          employeeName={employee.name}
+          date={shiftChangeDialog.date}
+          newShift={shiftChangeDialog.newShift}
+          existingMessage={shiftChangeDialog.existingMessage}
+        />
+      </>
     );
   },
 );

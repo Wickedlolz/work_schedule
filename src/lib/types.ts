@@ -24,6 +24,7 @@ export interface Employee {
   maxMonthlyHours?: number; // Optional: Manual override for max monthly hours
   shifts: Record<string, ShiftValue>; // Key = date: "YYYY-MM-DD"
   changedShifts?: Record<string, number>; // Track how many times each shift has been changed
+  shiftMessages?: Record<string, string>; // Custom messages for each shift change
 }
 
 export interface Schedule {

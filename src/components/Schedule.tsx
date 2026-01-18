@@ -60,7 +60,7 @@ const SchedulePage = () => {
     window.history.replaceState(
       {},
       "",
-      `${window.location.pathname}?${params.toString()}`
+      `${window.location.pathname}?${params.toString()}`,
     );
   }, [selectedMonth, selectedYear]);
 
@@ -69,7 +69,7 @@ const SchedulePage = () => {
   // Memoized calculations for performance
   const days = useMemo(
     () => generateMonthDays(selectedYear, selectedMonth),
-    [selectedYear, selectedMonth]
+    [selectedYear, selectedMonth],
   );
   const monthLabel = useMemo(
     () =>
@@ -77,7 +77,7 @@ const SchedulePage = () => {
         month: "long",
         year: "numeric",
       }),
-    [selectedYear, selectedMonth]
+    [selectedYear, selectedMonth],
   );
 
   /**
@@ -86,10 +86,11 @@ const SchedulePage = () => {
   const handleShiftChange = async (
     employeeId: string,
     date: string,
-    newShift: ShiftValue
+    newShift: ShiftValue,
+    message?: string | null,
   ) => {
     try {
-      await updateShift(employeeId, date, newShift);
+      await updateShift(employeeId, date, newShift, message);
       toast.success(MESSAGES.shifts.updated);
     } catch (err) {
       toast.error(MESSAGES.errors.shiftUpdate(err));
@@ -101,7 +102,7 @@ const SchedulePage = () => {
    */
   const handleAddEmployee = async (
     employeeName: string,
-    workingHours: WorkingHours
+    workingHours: WorkingHours,
   ) => {
     if (isSubmitting) return;
 
@@ -170,7 +171,7 @@ const SchedulePage = () => {
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ) => {
     await duplicateSchedule(
       sourceId,
@@ -178,7 +179,7 @@ const SchedulePage = () => {
       targetMonth,
       targetYear,
       copyEmployees,
-      copyShifts
+      copyShifts,
     );
   };
 
@@ -197,7 +198,7 @@ const SchedulePage = () => {
     try {
       const generatedShifts = autoGenerateSchedule(
         activeSchedule.employees,
-        days
+        days,
       );
       await bulkUpdateShifts(generatedShifts);
       toast.success(MESSAGES.autoGenerate.success);
@@ -220,7 +221,7 @@ const SchedulePage = () => {
     exportToExcel(
       activeSchedule.employees,
       days,
-      `${scheduleName} - ${monthLabel}`
+      `${scheduleName} - ${monthLabel}`,
     );
   };
 

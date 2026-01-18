@@ -26,7 +26,8 @@ interface ScheduleTableProps {
   handleShiftChange: (
     employeeId: string,
     date: string,
-    value: ShiftValue
+    value: ShiftValue,
+    message?: string | null,
   ) => void;
   removeEmployee: (id: string) => void;
   tableRef: React.RefObject<HTMLTableElement | null>;
@@ -66,7 +67,12 @@ const ScheduleTable = ({
   });
 
   const handleSelectChange = useCallback(
-    (employeeId: string, date: string, value: ShiftType) => {
+    (
+      employeeId: string,
+      date: string,
+      value: ShiftType,
+      message?: string | null,
+    ) => {
       if (value === "Custom") {
         // Get existing custom shift if any
         const employee = employees.find((e) => e.id === employeeId);
@@ -83,10 +89,10 @@ const ScheduleTable = ({
           existingShift: existingCustomShift,
         });
       } else {
-        handleShiftChange(employeeId, date, value);
+        handleShiftChange(employeeId, date, value, message);
       }
     },
-    [employees, handleShiftChange]
+    [employees, handleShiftChange],
   );
 
   const handleWorkHoursClick = useCallback((employeeId: string) => {
@@ -97,7 +103,8 @@ const ScheduleTable = ({
     handleShiftChange(
       customShiftModal.employeeId,
       customShiftModal.date,
-      customShift
+      customShift,
+      undefined,
     );
     setCustomShiftModal({ open: false, employeeId: "", date: "" });
   };
@@ -151,7 +158,7 @@ const ScheduleTable = ({
                     key={day}
                     className={cn(
                       "text-center p-1 border border-gray-300 whitespace-nowrap text-xs",
-                      isRedDay && "bg-red-100"
+                      isRedDay && "bg-red-100",
                     )}
                     scope="col"
                   >
@@ -194,7 +201,7 @@ const ScheduleTable = ({
                 {employees.reduce((total, employee) => {
                   const workHoursStats = calculateEmployeeWorkHours(
                     employee,
-                    days
+                    days,
                   );
                   return total + workHoursStats.actual;
                 }, 0)}
