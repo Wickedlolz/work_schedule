@@ -20,6 +20,8 @@ import type { Employee, ShiftValue } from "./types";
  *
  * All teams:
  * - Each employee gets at least 2 rest days per week
+ * - Maximum 6 consecutive work days per employee
+ * - After Evening shift (ends 22:00), employee cannot work Morning shift next day (starts 06:00)
  * - Night shifts left empty for manual assignment
  * - 4-hour employees always assigned to Evening shift (they have another job in the morning)
  * - Respects expected monthly hours based on working days and employee's daily hours
@@ -29,7 +31,7 @@ import type { Employee, ShiftValue } from "./types";
  */
 export const autoGenerateSchedule = (
   employees: Employee[],
-  days: string[] // ISO date strings (YYYY-MM-DD)
+  days: string[], // ISO date strings (YYYY-MM-DD)
 ): Record<string, Record<string, ShiftValue>> => {
   const scheduleData: Record<string, Record<string, ShiftValue>> = {};
 
@@ -52,14 +54,33 @@ export const autoGenerateSchedule = (
 
   const accumulatedHours: Record<string, number> = {};
   const expectedHours: Record<string, number> = {};
+  const consecutiveWorkDays: Record<string, number> = {};
 
   employees.forEach((emp) => {
     accumulatedHours[emp.id] = 0;
     expectedHours[emp.id] = workingDaysCount * emp.workingHours;
+    consecutiveWorkDays[emp.id] = 0;
   });
 
   const addWorkHours = (empId: string, hours: number) => {
     accumulatedHours[empId] += hours;
+  };
+
+  // Get previous day's shift for an employee
+  const getPreviousDayShift = (
+    empId: string,
+    currentDay: string,
+  ): ShiftValue | null => {
+    const currentDate = new Date(currentDay);
+    currentDate.setDate(currentDate.getDate() - 1);
+    const prevDay = currentDate.toISOString().split("T")[0];
+    return scheduleData[empId]?.[prevDay] || null;
+  };
+
+  // Check if employee can work Morning (not after Evening - insufficient rest)
+  const canWorkMorning = (empId: string, currentDay: string): boolean => {
+    const prevShift = getPreviousDayShift(empId, currentDay);
+    return prevShift !== "Evening";
   };
 
   // 2. Group days by ISO Calendar Week (Mon-Sun)
@@ -101,12 +122,22 @@ export const autoGenerateSchedule = (
       const targetRestDays =
         weekDays.length >= 5 ? 2 : weekDays.length >= 3 ? 1 : 0;
 
+      // Force rest if employee has worked 6 consecutive days
+      const mustRestSoon = consecutiveWorkDays[emp.id] >= 6;
+
       // Try to assign rest days
       // Strategy: Pick random available days to ensure rotation, avoiding days that are full
       const potentialDays = [...weekDays].sort(() => Math.random() - 0.5);
 
       for (const day of potentialDays) {
         if (restDayAssignments[emp.id].length >= targetRestDays) break;
+
+        // Prioritize rest if employee hit max consecutive days
+        if (mustRestSoon && restDayAssignments[emp.id].length === 0) {
+          restDayAssignments[emp.id].push(day);
+          dailyRestCounts[day]++;
+          continue;
+        }
 
         // If strict coverage allows more rest on this day
         if (dailyRestCounts[day] < maxRestPerDay) {
@@ -126,12 +157,13 @@ export const autoGenerateSchedule = (
       sortedEmployees.forEach((emp) => {
         if (restDayAssignments[emp.id]?.includes(day)) {
           scheduleData[emp.id][day] = "Off";
+          consecutiveWorkDays[emp.id] = 0; // Reset counter on rest day
         }
       });
 
       // 1. Filter who is available (not resting)
       let availableForShift = sortedEmployees.filter(
-        (emp) => !restDayAssignments[emp.id]?.includes(day)
+        (emp) => !restDayAssignments[emp.id]?.includes(day),
       );
 
       // CRITICAL: If everyone is on rest (rare edge case), force someone to work
@@ -148,16 +180,17 @@ export const autoGenerateSchedule = (
 
       // 2. Identify 4-hour vs standard employees
       const fourHourEmps = availableForShift.filter(
-        (e) => e.workingHours === 4
+        (e) => e.workingHours === 4,
       );
       const standardEmps = availableForShift.filter(
-        (e) => e.workingHours !== 4
+        (e) => e.workingHours !== 4,
       );
 
       // 3. Assign 4-hour employees (Always Evening)
       fourHourEmps.forEach((emp) => {
         scheduleData[emp.id][day] = "Evening";
         addWorkHours(emp.id, emp.workingHours);
+        consecutiveWorkDays[emp.id]++;
       });
 
       // 4. Assign Standard Employees
@@ -178,14 +211,18 @@ export const autoGenerateSchedule = (
 
         // Fill Morning First (Standard Emps only)
         standardEmps.forEach((emp) => {
-          if (morningCount < targetMorning) {
+          const canMorning = canWorkMorning(emp.id, day);
+
+          if (morningCount < targetMorning && canMorning) {
             scheduleData[emp.id][day] = "Morning";
             morningCount++;
             addWorkHours(emp.id, emp.workingHours);
+            consecutiveWorkDays[emp.id]++;
           } else {
             // Everyone else goes to Evening (better coverage than "Off")
             scheduleData[emp.id][day] = "Evening";
             addWorkHours(emp.id, emp.workingHours);
+            consecutiveWorkDays[emp.id]++;
           }
         });
       } else {
@@ -196,13 +233,16 @@ export const autoGenerateSchedule = (
         const targetMorning = Math.ceil(totalToAssign / 2);
 
         standardEmps.forEach((emp) => {
-          if (morningCount < targetMorning) {
+          const canMorning = canWorkMorning(emp.id, day);
+
+          if (morningCount < targetMorning && canMorning) {
             scheduleData[emp.id][day] = "Morning";
             morningCount++;
           } else {
             scheduleData[emp.id][day] = "Evening";
           }
           addWorkHours(emp.id, emp.workingHours);
+          consecutiveWorkDays[emp.id]++;
         });
       }
     });
