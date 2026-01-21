@@ -12,6 +12,12 @@ import {
 import { db } from "@/lib/firebase";
 import type { Schedule, Employee, ShiftValue, WorkingHours } from "@/lib/types";
 import { DEFAULT_WORKING_HOURS } from "@/lib/constants";
+import {
+  hadPreviousShift,
+  incrementChangeCount,
+  deleteShiftMessage,
+  updateShiftMessage,
+} from "@/lib/employeeUpdates";
 
 interface UseFirebaseSchedulesReturn {
   schedules: Schedule[];
@@ -305,46 +311,31 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     try {
       const updatedEmployees = activeSchedule.employees.map((emp) => {
         if (emp.id === employeeId) {
-          // Check if there was already a shift on this date
-          const hadPreviousShift =
-            emp.shifts[date] !== undefined && emp.shifts[date] !== null;
-
-          // Get current change count and increment it
-          const currentCount = emp.changedShifts?.[date] || 0;
+          const hadShift = hadPreviousShift(emp, date);
 
           const updatedEmployee: any = {
             ...emp,
             shifts: { ...emp.shifts, [date]: shift },
             // Only increment change count if we're modifying an existing shift
-            changedShifts: hadPreviousShift
-              ? { ...emp.changedShifts, [date]: currentCount + 1 }
+            changedShifts: hadShift
+              ? incrementChangeCount(emp, date)
               : emp.changedShifts,
           };
 
           // Handle custom message for shift changes
-          if (hadPreviousShift) {
+          if (hadShift) {
             if (message === null) {
-              // Remove message if null (user cleared it)
-              if (emp.shiftMessages && emp.shiftMessages[date]) {
-                const { [date]: _, ...remainingMessages } = emp.shiftMessages;
-                // Always set shiftMessages to the remaining messages (even if empty)
-                updatedEmployee.shiftMessages = remainingMessages;
-              } else if (emp.shiftMessages) {
-                // Keep existing messages if the date doesn't have a message
-                updatedEmployee.shiftMessages = emp.shiftMessages;
-              }
+              updatedEmployee.shiftMessages = deleteShiftMessage(emp, date);
             } else if (message) {
-              // Save new/updated message
-              updatedEmployee.shiftMessages = {
-                ...emp.shiftMessages,
-                [date]: message,
-              };
+              updatedEmployee.shiftMessages = updateShiftMessage(
+                emp,
+                date,
+                message,
+              );
             } else if (emp.shiftMessages) {
-              // Keep existing messages unchanged
               updatedEmployee.shiftMessages = emp.shiftMessages;
             }
           } else if (emp.shiftMessages) {
-            // First-time assignment, keep existing messages
             updatedEmployee.shiftMessages = emp.shiftMessages;
           }
 

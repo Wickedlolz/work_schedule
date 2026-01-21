@@ -1,12 +1,18 @@
 import { memo, useMemo, useState } from "react";
 import { cn, calculateEmployeeWorkHours } from "@/lib/utils";
-import type { Employee, ShiftType, ShiftValue } from "@/lib/types";
 import {
-  SHIFT_OPTIONS,
-  SHIFT_COLORS,
-  WEEKEND_DAYS,
-  SHIFT_LABELS_BG,
-} from "@/lib/constants";
+  getShiftDisplay,
+  getShiftColor,
+  getShiftValue,
+} from "@/lib/shiftUtils";
+import {
+  getBadgeColor,
+  getCellBorderClass,
+  buildTooltipText,
+  formatChangeCountText,
+} from "@/lib/badgeUtils";
+import type { Employee, ShiftType } from "@/lib/types";
+import { SHIFT_OPTIONS, WEEKEND_DAYS, SHIFT_LABELS_BG } from "@/lib/constants";
 import { Button } from "../ui/button";
 import {
   AlertDialog,
@@ -42,27 +48,6 @@ type EmployeeRowProps = {
   ) => void;
   onRemove: (employeeId: string) => void;
   onWorkHoursClick: (employeeId: string) => void;
-};
-
-const getShiftDisplay = (shift: ShiftValue): string => {
-  if (typeof shift === "object" && shift.type === "Custom") {
-    return `${shift.startTime} - ${shift.endTime}`;
-  }
-  return SHIFT_LABELS_BG[shift as ShiftType] || "";
-};
-
-const getShiftColor = (shift: ShiftValue): string => {
-  if (typeof shift === "object" && shift.type === "Custom") {
-    return SHIFT_COLORS.Custom;
-  }
-  return SHIFT_COLORS[shift as keyof typeof SHIFT_COLORS] || "";
-};
-
-const getShiftValue = (shift: ShiftValue): ShiftType => {
-  if (typeof shift === "object" && shift.type === "Custom") {
-    return "Custom";
-  }
-  return shift as ShiftType;
 };
 
 export const EmployeeRow = memo(
@@ -222,24 +207,16 @@ export const EmployeeRow = memo(
             const conflictMessage = conflicts.get(conflictKey);
             const customMessage = employee.shiftMessages?.[day];
 
-            // Determine badge color based on change count
-            let badgeColor = "bg-blue-500";
-            if (changeCount >= 6) {
-              badgeColor = "bg-red-600";
-            } else if (changeCount >= 3) {
-              badgeColor = "bg-orange-500";
-            }
-
-            // Build tooltip text
-            let tooltipText: string | undefined;
-            if (hasConflict) {
-              tooltipText = conflictMessage;
-            } else if (isChanged) {
-              const changesText = `Променена ${changeCount} ${changeCount === 1 ? "път" : changeCount < 5 ? "пъти" : "пъти"}`;
-              tooltipText = customMessage
-                ? `${changesText} \n ${customMessage}`
-                : changesText;
-            }
+            const badgeColor = getBadgeColor(changeCount);
+            const cellBorderClass = isChanged
+              ? getCellBorderClass(changeCount)
+              : "";
+            const tooltipText = buildTooltipText(
+              hasConflict,
+              conflictMessage,
+              changeCount,
+              customMessage,
+            );
 
             return (
               <td
@@ -249,16 +226,7 @@ export const EmployeeRow = memo(
                   "border border-gray-300 p-1 text-center whitespace-nowrap relative",
                   isRedDay && "bg-red-50",
                   hasConflict && "bg-orange-100 border-orange-400 border-2",
-                  isChanged &&
-                    changeCount < 3 &&
-                    "bg-blue-50 border-blue-400 border-2",
-                  isChanged &&
-                    changeCount >= 3 &&
-                    changeCount < 6 &&
-                    "bg-orange-50 border-orange-500 border-2",
-                  isChanged &&
-                    changeCount >= 6 &&
-                    "bg-red-50 border-red-500 border-2",
+                  cellBorderClass,
                   getShiftColor(currentShift),
                 )}
                 title={tooltipText}
@@ -348,16 +316,7 @@ export const EmployeeRow = memo(
               <AlertDialogTitle>Информация за промяна</AlertDialogTitle>
               <AlertDialogDescription>
                 <div className="space-y-2 text-sm">
-                  <p>
-                    Тази смяна е променяна{" "}
-                    <strong>{changeInfoDialog.changeCount}</strong>{" "}
-                    {changeInfoDialog.changeCount === 1
-                      ? "път"
-                      : changeInfoDialog.changeCount < 5
-                        ? "пъти"
-                        : "пъти"}
-                    .
-                  </p>
+                  <p>{formatChangeCountText(changeInfoDialog.changeCount)}.</p>
                   {changeInfoDialog.message && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
                       <p className="font-semibold text-blue-900 mb-1">
