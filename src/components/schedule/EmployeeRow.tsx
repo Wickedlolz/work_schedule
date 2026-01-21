@@ -89,6 +89,15 @@ export const EmployeeRow = memo(
       newShift: "Off",
     });
 
+    const [changeInfoDialog, setChangeInfoDialog] = useState<{
+      isOpen: boolean;
+      changeCount: number;
+      message?: string;
+    }>({
+      isOpen: false,
+      changeCount: 0,
+    });
+
     const workHoursStats = useMemo(
       () => calculateEmployeeWorkHours(employee, days),
       [employee, days],
@@ -255,14 +264,24 @@ export const EmployeeRow = memo(
                 title={tooltipText}
               >
                 {isChanged && (
-                  <div
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setChangeInfoDialog({
+                        isOpen: true,
+                        changeCount,
+                        message: customMessage,
+                      });
+                    }}
                     className={cn(
-                      "absolute -top-1 -left-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10",
+                      "absolute -top-1 -left-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10 cursor-pointer hover:scale-110 transition-transform",
                       badgeColor,
                     )}
+                    aria-label="Покажи информация за промени"
                   >
                     {changeCount}
-                  </div>
+                  </button>
                 )}
                 {hasConflict && (
                   <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs z-10">
@@ -318,6 +337,45 @@ export const EmployeeRow = memo(
           newShift={shiftChangeDialog.newShift}
           existingMessage={shiftChangeDialog.existingMessage}
         />
+        <AlertDialog
+          open={changeInfoDialog.isOpen}
+          onOpenChange={(open) =>
+            setChangeInfoDialog((prev) => ({ ...prev, isOpen: open }))
+          }
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Информация за промяна</AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    Тази смяна е променяна{" "}
+                    <strong>{changeInfoDialog.changeCount}</strong>{" "}
+                    {changeInfoDialog.changeCount === 1
+                      ? "път"
+                      : changeInfoDialog.changeCount < 5
+                        ? "пъти"
+                        : "пъти"}
+                    .
+                  </p>
+                  {changeInfoDialog.message && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="font-semibold text-blue-900 mb-1">
+                        Бележка:
+                      </p>
+                      <p className="text-blue-800">
+                        {changeInfoDialog.message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction>Затвори</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
   },
