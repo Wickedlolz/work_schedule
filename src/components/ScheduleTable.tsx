@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import type { User } from "firebase/auth";
 import {
   cn,
   getBulgarianHolidays,
@@ -14,6 +15,8 @@ import type {
   WorkHoursModalState,
 } from "@/lib/types";
 import { WEEKEND_DAYS } from "@/lib/constants";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "./ui/button";
 
 import { CustomShiftModal } from "./schedule/CustomShiftModal";
 import { WorkHoursModal } from "./schedule/WorkHoursModal";
@@ -32,6 +35,9 @@ interface ScheduleTableProps {
   removeEmployee: (id: string) => void;
   tableRef: React.RefObject<HTMLTableElement | null>;
   isAuthenticated: boolean;
+  isPublic: boolean;
+  onTogglePublic: () => void;
+  user: User | null;
 }
 
 const ScheduleTable = ({
@@ -41,6 +47,9 @@ const ScheduleTable = ({
   removeEmployee,
   tableRef,
   isAuthenticated,
+  isPublic,
+  onTogglePublic,
+  user,
 }: ScheduleTableProps) => {
   // Calculate holidays once for the current month/year
   const holidays = useMemo(() => {
@@ -111,7 +120,38 @@ const ScheduleTable = ({
 
   return (
     <section className="w-full">
-      <div className="w-full overflow-x-auto overflow-y-hidden">
+      {/* Public/Private Toggle Button - Only for admins */}
+      {user && (
+        <div className="mb-3 flex justify-end">
+          <Button
+            onClick={onTogglePublic}
+            variant={isPublic ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+          >
+            {isPublic ? (
+              <>
+                <Eye className="h-4 w-4" />
+                Публичен
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Частен
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "w-full relative",
+          !isPublic && !user
+            ? "overflow-hidden min-h-[400px]"
+            : "overflow-x-auto overflow-y-hidden",
+        )}
+      >
         <table
           ref={tableRef}
           id="schedule-table"
@@ -189,10 +229,28 @@ const ScheduleTable = ({
             ))}
           </tbody>
         </table>
+
+        {/* Private Schedule Overlay - Show when schedule is private and user is not admin */}
+        {!isPublic && !user && (
+          <div className="absolute inset-0 bg-white/98 backdrop-blur-sm flex items-center justify-center z-40">
+            <div className="bg-white border-2 border-gray-300 rounded-lg shadow-xl p-8 max-w-md text-center">
+              <div className="mb-4">
+                <EyeOff className="h-16 w-16 text-gray-400 mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                Графикът е частен
+              </h3>
+              <p className="text-gray-600 text-lg">
+                Този график все още не е готов и е достъпен само за
+                администратори.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Total Work Hours Summary */}
-      {employees.length > 0 && (
+      {/* Total Work Hours Summary - Only show when schedule is public or user is admin */}
+      {employees.length > 0 && (isPublic || user) && (
         <div className="mt-6 mb-4 flex justify-center">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 px-6 py-4">
             <p className="text-base font-semibold text-gray-700">

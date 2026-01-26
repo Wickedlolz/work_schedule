@@ -38,6 +38,7 @@ const SchedulePage = () => {
     removeEmployee: removeEmployeeFromFirebase,
     updateShift,
     bulkUpdateShifts,
+    togglePublicStatus,
   } = useFirebaseSchedules();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -160,6 +161,27 @@ const SchedulePage = () => {
   const handleAddSchedule = async (name: string) => {
     await addSchedule(name);
     toast.success(MESSAGES.schedule.added);
+  };
+
+  /**
+   * Handles toggling schedule public/private status for current month
+   */
+  const handleTogglePublicStatus = async () => {
+    if (!activeScheduleId || !activeSchedule) return;
+
+    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+    const isCurrentlyPublic = activeSchedule.isPublic[monthKey] ?? false;
+
+    try {
+      await togglePublicStatus(activeScheduleId, selectedMonth, selectedYear);
+      toast.success(
+        isCurrentlyPublic
+          ? "Графикът за този месец е сега частен"
+          : "Графикът за този месец е сега публичен",
+      );
+    } catch (err) {
+      toast.error("Грешка при промяна на статуса на графика");
+    }
   };
 
   /**
@@ -304,6 +326,13 @@ const SchedulePage = () => {
             removeEmployee={handleRemoveEmployee}
             tableRef={tableRef}
             isAuthenticated={!!user}
+            isPublic={
+              activeSchedule.isPublic[
+                `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`
+              ] ?? false
+            }
+            onTogglePublic={handleTogglePublicStatus}
+            user={user}
           />
         </>
       )}

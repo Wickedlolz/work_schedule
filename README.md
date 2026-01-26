@@ -10,6 +10,7 @@ A comprehensive, mobile-friendly work scheduling application with **multi-schedu
 
 - ✅ **Multiple Schedules** - Create and manage unlimited work schedules
 - ✅ **Duplicate Schedules** - Clone schedules with flexible copy options (employees, shifts, or both)
+- ✅ **Private/Public Schedules** - Control visibility per month - hide work-in-progress schedules from public view
 - ✅ **Auto-Generate Schedules** - Intelligent algorithm adapts to any team size
 - ✅ **Custom Shifts** - Personalized time ranges (e.g., 9:00-17:30)
 - ✅ **Work Hours Analytics** - Track expected vs actual hours with overwork alerts
@@ -115,11 +116,19 @@ Open http://localhost:5173
 - ✅ View all schedules
 - ✅ Navigate months/years
 - ✅ Export to PDF/Excel
+- ✅ **View public schedules** - See schedules marked as public by admins
+- ❌ **Private schedules hidden** - Work-in-progress schedules show "Графикът е частен" overlay
 - ❌ Cannot edit
 
 ### Authenticated Mode (After Login)
 
 - ✅ All public features
+- ✅ **Control schedule visibility** - Toggle each month between Public/Private:
+  - **Public (👁️)**: Visible to everyone (ideal for finalized schedules)
+  - **Private (🚫)**: Only admins can view (perfect for work-in-progress)
+  - Toggle button appears at top-right of schedule table
+  - Each month has independent visibility (e.g., March public, April private)
+  - New schedules default to private for all months
 - ✅ Create/edit/delete schedules
 - ✅ **Duplicate schedules** - Clone existing schedules with flexible options:
   - **Copy employees only**: Creates new empty schedule with same team (useful for new months)
@@ -137,7 +146,9 @@ Open http://localhost:5173
   - **Large teams (9+ employees)**: 3 Morning + 5-6 Evening on weekends
   - **Medium teams (4-8 employees)**: ~2 Morning + rest Evening on weekends
   - **Small teams (1-3 employees)**: Balanced distribution adapted to available workforce
-  - All teams: 2 rest days/week, respects monthly hour limits, 4-hour employees always Evening
+  - All teams: 2 rest days/week, max 6 consecutive work days, respects monthly hour limits
+  - **Smart rest scheduling**: Prevents Morning shift after Evening shift (insufficient rest)
+  - 4-hour employees always Evening (they have another job in the morning)
   - Weekdays: Balanced Morning/Evening (Night shifts left for manual assignment)
 
 ---
@@ -148,6 +159,11 @@ Open http://localhost:5173
 schedules/
   {scheduleId}/
     name: "Schedule 1"
+    isPublic: {  // Per-month visibility control (key format: "YYYY-MM")
+      "2026-01": true,   // January 2026 is public
+      "2026-02": false,  // February 2026 is private
+      "2026-03": true    // March 2026 is public
+    }
     employees: [
       {
         id: "1234",
@@ -155,22 +171,22 @@ schedules/
         workingHours: 8,  // 4, 6, or 8 hours
         maxMonthlyHours: 160,  // Optional: Manual override for max monthly hours
         shifts: {
-          "2025-11-01": "Morning",number of times each shift was modified
-          "2025-11-02": 2,
-          "2025-11-03": 5
+          "2026-01-01": "Morning",
+          "2026-01-02": { type: "Custom", startTime: "09:00", endTime: "17:30" },
+          "2026-01-03": "Evening"
+        },
+        changedShifts: {  // Track number of times each shift was modified
+          "2026-01-02": 2,
+          "2026-01-03": 5
         },
         shiftMessages: {  // Optional custom messages for shift changes
-          "2025-11-02": "По негово желание",
-          "2025-11-03": "Болничен"pe: "Custom", startTime: "09:00", endTime: "17:30" },
-          "2025-11-03": "Night"
-        },
-        changedShifts: {  // Tracks manually modified shifts
-          "2025-11-02": true
+          "2026-01-02": "По негово желание",
+          "2026-01-03": "Болничен"
         }
       }
     ]
-    createdAt: "2025-11-01T..."
-    updatedAt: "2025-11-01T..."
+    createdAt: "2026-01-01T..."
+    updatedAt: "2026-01-01T..."
 ```
 
 ---

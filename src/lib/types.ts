@@ -33,6 +33,7 @@ export interface Schedule {
   employees: Employee[];
   createdAt: string;
   updatedAt: string;
+  isPublic: Record<string, boolean>; // Key format: "YYYY-MM" - Default: false for each month
 }
 
 export interface CustomShiftModalState {

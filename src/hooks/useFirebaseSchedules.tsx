@@ -49,6 +49,11 @@ interface UseFirebaseSchedulesReturn {
   bulkUpdateShifts: (
     shiftsData: Record<string, Record<string, ShiftValue>>,
   ) => Promise<void>;
+  togglePublicStatus: (
+    id: string,
+    month: number,
+    year: number,
+  ) => Promise<void>;
 }
 
 export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
@@ -93,10 +98,21 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
             workingHours: emp.workingHours || DEFAULT_WORKING_HOURS,
           }));
 
+          // Handle backward compatibility: convert boolean to Record or default to empty object
+          let isPublic: Record<string, boolean> = {};
+          if (typeof data.isPublic === "boolean") {
+            // Old format: apply to all months
+            isPublic = {};
+          } else if (data.isPublic && typeof data.isPublic === "object") {
+            // New format: use as is
+            isPublic = data.isPublic as Record<string, boolean>;
+          }
+
           scheduleData.push({
             id: doc.id,
             ...data,
             employees,
+            isPublic,
           } as Schedule);
         });
 
@@ -131,6 +147,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         employees: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isPublic: {}, // Default to private for all months
       };
       const docRef = await addDoc(collection(db, "schedules"), newSchedule);
       setActiveScheduleIdInternal(docRef.id);
@@ -237,6 +254,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         employees: newEmployees,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isPublic: {}, // Default to private for all months
       };
 
       const docRef = await addDoc(collection(db, "schedules"), newSchedule);
@@ -388,6 +406,39 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     setActiveScheduleIdInternal(id);
   };
 
+  // Toggle schedule public/private status for specific month
+  const togglePublicStatus = async (
+    id: string,
+    month: number,
+    year: number,
+  ) => {
+    try {
+      const schedule = schedules.find((s) => s.id === id);
+      if (!schedule) {
+        throw new Error("Schedule not found");
+      }
+
+      // Create month key in format "YYYY-MM"
+      const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+      // Toggle the status for this specific month
+      const updatedIsPublic = {
+        ...schedule.isPublic,
+        [monthKey]: !(schedule.isPublic[monthKey] ?? false),
+      };
+
+      const scheduleRef = doc(db, "schedules", id);
+      await updateDoc(scheduleRef, {
+        isPublic: updatedIsPublic,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Error toggling schedule public status:", err);
+      setError("Failed to toggle schedule public status");
+      throw err;
+    }
+  };
+
   return {
     schedules,
     activeSchedule,
@@ -404,5 +455,6 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
     removeEmployee,
     updateShift,
     bulkUpdateShifts,
+    togglePublicStatus,
   };
 }

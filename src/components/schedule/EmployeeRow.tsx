@@ -200,7 +200,14 @@ export const EmployeeRow = memo(
             const isHoliday = holidays.has(day);
             const isRedDay = isWeekend || isHoliday;
             const currentShift = employee.shifts[day] || "Off";
-            const changeCount = employee.changedShifts?.[day] || 0;
+            // Safety check: convert boolean true to 1, false/undefined to 0
+            const rawChangeCount = employee.changedShifts?.[day];
+            const changeCount =
+              typeof rawChangeCount === "boolean"
+                ? rawChangeCount
+                  ? 1
+                  : 0
+                : rawChangeCount || 0;
             const isChanged = changeCount > 0;
             const conflictKey = `${employee.id}-${day}`;
             const hasConflict = conflicts.has(conflictKey);
