@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import type { User } from "firebase/auth";
 import {
   cn,
@@ -15,7 +15,7 @@ import type {
   WorkHoursModalState,
 } from "@/lib/types";
 import { WEEKEND_DAYS } from "@/lib/constants";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Maximize, Minimize } from "lucide-react";
 import { Button } from "./ui/button";
 
 import { CustomShiftModal } from "./schedule/CustomShiftModal";
@@ -62,6 +62,87 @@ const ScheduleTable = ({
   const conflicts = useMemo(() => {
     return detectAllShiftConflicts(employees, days);
   }, [employees, days]);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenScale, setFullscreenScale] = useState(1);
+  const [isRotated, setIsRotated] = useState(false);
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+  const isMobilePortrait = useCallback(() => {
+    return window.innerWidth < 768 && window.innerHeight > window.innerWidth;
+  }, []);
+
+  const calculateScale = useCallback(
+    (natWidth: number, natHeight: number, rotated: boolean) => {
+      if (!fullscreenRef.current || natWidth === 0) return;
+      const container = fullscreenRef.current;
+      // When rotated, the table's width maps to the screen's height and vice-versa
+      const availableWidth = rotated
+        ? container.clientHeight - 80
+        : container.clientWidth - 35;
+      const availableHeight = rotated
+        ? container.clientWidth - 16
+        : container.clientHeight - 790;
+      const scale = Math.min(
+        availableWidth / natWidth,
+        availableHeight / natHeight,
+        1,
+      );
+      setFullscreenScale(scale);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const active = !!document.fullscreenElement;
+      setIsFullscreen(active);
+      if (!active) {
+        setFullscreenScale(1);
+        setIsRotated(false);
+        setNaturalSize({ width: 0, height: 0 });
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Recalculate on resize when in fullscreen
+  useEffect(() => {
+    if (!isFullscreen || naturalSize.width === 0) return;
+    const onResize = () => {
+      const rotated = isMobilePortrait();
+      setIsRotated(rotated);
+      calculateScale(naturalSize.width, naturalSize.height, rotated);
+    };
+    const timer = setTimeout(onResize, 150);
+    window.addEventListener("resize", onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [isFullscreen, naturalSize, calculateScale, isMobilePortrait]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!document.fullscreenElement) {
+      if (tableRef.current) {
+        const nat = {
+          width: tableRef.current.scrollWidth,
+          height: tableRef.current.scrollHeight,
+        };
+        setNaturalSize(nat);
+        const rotated = isMobilePortrait();
+        setIsRotated(rotated);
+        await fullscreenRef.current?.requestFullscreen();
+        setTimeout(() => calculateScale(nat.width, nat.height, rotated), 150);
+      }
+    } else {
+      await document.exitFullscreen();
+    }
+  }, [tableRef, calculateScale, isMobilePortrait]);
 
   const [customShiftModal, setCustomShiftModal] =
     useState<CustomShiftModalState>({
@@ -119,10 +200,36 @@ const ScheduleTable = ({
   };
 
   return (
-    <section className="w-full">
-      {/* Public/Private Toggle Button - Only for admins */}
-      {user && (
-        <div className="mb-3 flex justify-end">
+    <section
+      ref={fullscreenRef}
+      className={cn(
+        "w-full",
+        isFullscreen && "bg-white flex flex-col p-4 overflow-auto",
+      )}
+    >
+      {/* Toolbar: Fullscreen + Public/Private Toggle */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Button
+          onClick={toggleFullscreen}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          {isFullscreen ? (
+            <>
+              <Minimize className="h-4 w-4" />
+              Изход от цял екран
+            </>
+          ) : (
+            <>
+              <Maximize className="h-4 w-4" />
+              Цял екран
+            </>
+          )}
+        </Button>
+
+        {/* Public/Private Toggle Button - Only for admins */}
+        {user && (
           <Button
             onClick={onTogglePublic}
             variant={isPublic ? "default" : "outline"}
@@ -141,94 +248,126 @@ const ScheduleTable = ({
               </>
             )}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div
         className={cn(
           "w-full relative",
-          !isPublic && !user
-            ? "overflow-hidden min-h-[400px]"
-            : "overflow-x-auto overflow-y-hidden",
+          !isFullscreen &&
+            (!isPublic && !user
+              ? "overflow-hidden min-h-[400px]"
+              : "overflow-x-auto overflow-y-hidden"),
+          isFullscreen && "overflow-hidden flex-1",
         )}
       >
-        <table
-          ref={tableRef}
-          id="schedule-table"
-          className="min-w-[900px] w-full border border-gray-300 text-xs sm:text-sm"
-          role="table"
-          aria-label="Работен график"
+        {/* Scale wrapper - only active in fullscreen */}
+        <div
+          ref={tableWrapperRef}
+          style={
+            isFullscreen && naturalSize.width > 0
+              ? isRotated
+                ? {
+                    // Rotate 90° counter-clockwise so the table's long axis spans
+                    // the screen height (which is wider in portrait fullscreen)
+                    transform: `rotate(-90deg) scale(${fullscreenScale})`,
+                    transformOrigin: "top left",
+                    // After rotation the element's top-left moves; shift it back
+                    // so it starts at the visible top-left of the screen
+                    position: "absolute",
+                    top: `${naturalSize.width * fullscreenScale}px`,
+                    left: "0px",
+                    width: `${naturalSize.width}px`,
+                    height: `${naturalSize.height}px`,
+                  }
+                : {
+                    transform: `scale(${fullscreenScale})`,
+                    transformOrigin: "top left",
+                    width: `${naturalSize.width}px`,
+                    height: `${naturalSize.height}px`,
+                  }
+              : {}
+          }
         >
-          <thead className="bg-gray-100 sticky top-0 z-10">
-            <tr role="row">
-              <th
-                scope="col"
-                className="sticky left-0 z-20 bg-gray-100 text-left p-2 border border-gray-300 whitespace-nowrap"
-              >
-                Служител
-              </th>
-              <th
-                scope="col"
-                className="bg-gray-100 text-center p-2 border border-gray-300 whitespace-nowrap"
-                style={{ left: "auto" }}
-              >
-                Часове/ден
-              </th>
-              {days.map((day) => {
-                const date = new Date(day);
-                const dayOfWeek = date.getDay();
-                const isWeekend = WEEKEND_DAYS.includes(dayOfWeek as 0 | 6);
-                const isHoliday = holidays.has(day);
-                const isRedDay = isWeekend || isHoliday;
+          <table
+            ref={tableRef}
+            id="schedule-table"
+            className="min-w-[900px] w-full border border-gray-300 text-xs sm:text-sm"
+            role="table"
+            aria-label="Работен график"
+          >
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr role="row">
+                <th
+                  scope="col"
+                  className="sticky left-0 z-20 bg-gray-100 text-left p-2 border border-gray-300 whitespace-nowrap"
+                >
+                  Служител
+                </th>
+                <th
+                  scope="col"
+                  className="bg-gray-100 text-center p-2 border border-gray-300 whitespace-nowrap"
+                  style={{ left: "auto" }}
+                >
+                  Часове/ден
+                </th>
+                {days.map((day) => {
+                  const date = new Date(day);
+                  const dayOfWeek = date.getDay();
+                  const isWeekend = WEEKEND_DAYS.includes(dayOfWeek as 0 | 6);
+                  const isHoliday = holidays.has(day);
+                  const isRedDay = isWeekend || isHoliday;
 
-                // Bulgarian day abbreviations
-                const dayNames = [
-                  "Нд",
-                  "Пон",
-                  "Вто",
-                  "Сря",
-                  "Чет",
-                  "Пет",
-                  "Съб",
-                ];
-                const dayName = dayNames[dayOfWeek];
+                  // Bulgarian day abbreviations
+                  const dayNames = [
+                    "Нд",
+                    "Пон",
+                    "Вто",
+                    "Сря",
+                    "Чет",
+                    "Пет",
+                    "Съб",
+                  ];
+                  const dayName = dayNames[dayOfWeek];
 
-                return (
-                  <th
-                    key={day}
-                    className={cn(
-                      "text-center p-1 border border-gray-300 whitespace-nowrap text-xs",
-                      isRedDay && "bg-red-100",
-                    )}
-                    scope="col"
-                  >
-                    <div className="flex flex-col items-center">
-                      <span className="font-bold">{date.getDate()}</span>
-                      <span className="text-[10px] text-gray-600">
-                        {dayName}
-                      </span>
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((emp) => (
-              <EmployeeRow
-                key={emp.id}
-                employee={emp}
-                days={days}
-                holidays={holidays}
-                conflicts={conflicts}
-                isAuthenticated={isAuthenticated}
-                onShiftChange={handleSelectChange}
-                onRemove={removeEmployee}
-                onWorkHoursClick={handleWorkHoursClick}
-              />
-            ))}
-          </tbody>
-        </table>
+                  return (
+                    <th
+                      key={day}
+                      className={cn(
+                        "text-center p-1 border border-gray-300 whitespace-nowrap text-xs",
+                        isRedDay && "bg-red-100",
+                      )}
+                      scope="col"
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="font-bold">{date.getDate()}</span>
+                        <span className="text-[10px] text-gray-600">
+                          {dayName}
+                        </span>
+                      </div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <EmployeeRow
+                  key={emp.id}
+                  employee={emp}
+                  days={days}
+                  holidays={holidays}
+                  conflicts={conflicts}
+                  isAuthenticated={isAuthenticated}
+                  onShiftChange={handleSelectChange}
+                  onRemove={removeEmployee}
+                  onWorkHoursClick={handleWorkHoursClick}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* end scale wrapper */}
 
         {/* Private Schedule Overlay - Show when schedule is private and user is not admin */}
         {!isPublic && !user && (
