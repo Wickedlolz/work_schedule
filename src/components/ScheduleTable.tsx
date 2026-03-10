@@ -70,21 +70,26 @@ const ScheduleTable = ({
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
+  const supportsNativeFullscreen =
+    typeof document !== "undefined" && !!document.fullscreenEnabled;
+
   const isMobilePortrait = useCallback(() => {
     return window.innerWidth < 768 && window.innerHeight > window.innerWidth;
   }, []);
 
   const calculateScale = useCallback(
     (natWidth: number, natHeight: number, rotated: boolean) => {
-      if (!fullscreenRef.current || natWidth === 0) return;
-      const container = fullscreenRef.current;
-      // When rotated, the table's width maps to the screen's height and vice-versa
-      const availableWidth = rotated
-        ? container.clientHeight - 80
-        : container.clientWidth - 35;
-      const availableHeight = rotated
-        ? container.clientWidth - 16
-        : container.clientHeight - 790;
+      if (natWidth === 0) return;
+      // For simulated fullscreen use window dimensions; for native use the container
+      const viewW = supportsNativeFullscreen
+        ? (fullscreenRef.current?.clientWidth ?? window.innerWidth)
+        : window.innerWidth;
+      const viewH = supportsNativeFullscreen
+        ? (fullscreenRef.current?.clientHeight ?? window.innerHeight)
+        : window.innerHeight;
+
+      const availableWidth = rotated ? viewH - 80 : viewW - 16;
+      const availableHeight = rotated ? viewW - 16 : viewH - 80;
       const scale = Math.min(
         availableWidth / natWidth,
         availableHeight / natHeight,
@@ -92,8 +97,20 @@ const ScheduleTable = ({
       );
       setFullscreenScale(scale);
     },
-    [],
+    [supportsNativeFullscreen],
   );
+
+  // Lock / unlock body scroll when simulated fullscreen is active
+  useEffect(() => {
+    if (!supportsNativeFullscreen && isFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen, supportsNativeFullscreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -110,7 +127,7 @@ const ScheduleTable = ({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Recalculate on resize when in fullscreen
+  // Recalculate scale on resize while in fullscreen
   useEffect(() => {
     if (!isFullscreen || naturalSize.width === 0) return;
     const onResize = () => {
@@ -127,22 +144,46 @@ const ScheduleTable = ({
   }, [isFullscreen, naturalSize, calculateScale, isMobilePortrait]);
 
   const toggleFullscreen = useCallback(async () => {
-    if (!document.fullscreenElement) {
-      if (tableRef.current) {
-        const nat = {
-          width: tableRef.current.scrollWidth,
-          height: tableRef.current.scrollHeight,
-        };
-        setNaturalSize(nat);
-        const rotated = isMobilePortrait();
-        setIsRotated(rotated);
-        await fullscreenRef.current?.requestFullscreen();
-        setTimeout(() => calculateScale(nat.width, nat.height, rotated), 150);
+    if (isFullscreen) {
+      // Exit
+      if (supportsNativeFullscreen && document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        setIsFullscreen(false);
+        setFullscreenScale(1);
+        setIsRotated(false);
+        setNaturalSize({ width: 0, height: 0 });
       }
-    } else {
-      await document.exitFullscreen();
+      return;
     }
-  }, [tableRef, calculateScale, isMobilePortrait]);
+
+    // Enter — capture natural dimensions before anything changes
+    if (!tableRef.current) return;
+    const nat = {
+      width: tableRef.current.scrollWidth,
+      height: tableRef.current.scrollHeight,
+    };
+    const rotated = isMobilePortrait();
+    setNaturalSize(nat);
+    setIsRotated(rotated);
+    setIsFullscreen(true);
+
+    if (supportsNativeFullscreen) {
+      try {
+        await fullscreenRef.current?.requestFullscreen();
+      } catch {
+        // Native fullscreen failed — simulated fullscreen already set above
+      }
+    }
+
+    setTimeout(() => calculateScale(nat.width, nat.height, rotated), 150);
+  }, [
+    isFullscreen,
+    supportsNativeFullscreen,
+    tableRef,
+    calculateScale,
+    isMobilePortrait,
+  ]);
 
   const [customShiftModal, setCustomShiftModal] =
     useState<CustomShiftModalState>({
@@ -204,7 +245,13 @@ const ScheduleTable = ({
       ref={fullscreenRef}
       className={cn(
         "w-full",
-        isFullscreen && "bg-white flex flex-col p-4 overflow-auto",
+        isFullscreen && "bg-white flex flex-col p-4",
+        // Simulated fullscreen: fixed overlay covering the entire viewport
+        isFullscreen &&
+          !supportsNativeFullscreen &&
+          "fixed inset-0 z-9999 overflow-auto",
+        // Native fullscreen: fill the fullscreen context
+        isFullscreen && supportsNativeFullscreen && "overflow-auto",
       )}
     >
       {/* Toolbar: Fullscreen + Public/Private Toggle */}
