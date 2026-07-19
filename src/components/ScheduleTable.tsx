@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { User } from "firebase/auth";
 import {
   cn,
@@ -15,7 +15,7 @@ import type {
   WorkHoursModalState,
 } from "@/lib/types";
 import { WEEKEND_DAYS } from "@/lib/constants";
-import { Eye, EyeOff, Maximize, Minimize } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 
 import { CustomShiftModal } from "./schedule/CustomShiftModal";
@@ -62,128 +62,6 @@ const ScheduleTable = ({
   const conflicts = useMemo(() => {
     return detectAllShiftConflicts(employees, days);
   }, [employees, days]);
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [fullscreenScale, setFullscreenScale] = useState(1);
-  const [isRotated, setIsRotated] = useState(false);
-  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
-  const fullscreenRef = useRef<HTMLDivElement>(null);
-  const tableWrapperRef = useRef<HTMLDivElement>(null);
-
-  const supportsNativeFullscreen =
-    typeof document !== "undefined" && !!document.fullscreenEnabled;
-
-  const isMobilePortrait = useCallback(() => {
-    return window.innerWidth < 768 && window.innerHeight > window.innerWidth;
-  }, []);
-
-  const calculateScale = useCallback(
-    (natWidth: number, natHeight: number, rotated: boolean) => {
-      if (natWidth === 0) return;
-      // For simulated fullscreen use window dimensions; for native use the container
-      const viewW = supportsNativeFullscreen
-        ? (fullscreenRef.current?.clientWidth ?? window.innerWidth)
-        : window.innerWidth;
-      const viewH = supportsNativeFullscreen
-        ? (fullscreenRef.current?.clientHeight ?? window.innerHeight)
-        : window.innerHeight;
-
-      const availableWidth = rotated ? viewH - 80 : viewW - 16;
-      const availableHeight = rotated ? viewW - 16 : viewH - 80;
-      const scale = Math.min(
-        availableWidth / natWidth,
-        availableHeight / natHeight,
-        1,
-      );
-      setFullscreenScale(scale);
-    },
-    [supportsNativeFullscreen],
-  );
-
-  // Lock / unlock body scroll when simulated fullscreen is active
-  useEffect(() => {
-    if (!supportsNativeFullscreen && isFullscreen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isFullscreen, supportsNativeFullscreen]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const active = !!document.fullscreenElement;
-      setIsFullscreen(active);
-      if (!active) {
-        setFullscreenScale(1);
-        setIsRotated(false);
-        setNaturalSize({ width: 0, height: 0 });
-      }
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  // Recalculate scale on resize while in fullscreen
-  useEffect(() => {
-    if (!isFullscreen || naturalSize.width === 0) return;
-    const onResize = () => {
-      const rotated = isMobilePortrait();
-      setIsRotated(rotated);
-      calculateScale(naturalSize.width, naturalSize.height, rotated);
-    };
-    const timer = setTimeout(onResize, 150);
-    window.addEventListener("resize", onResize);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [isFullscreen, naturalSize, calculateScale, isMobilePortrait]);
-
-  const toggleFullscreen = useCallback(async () => {
-    if (isFullscreen) {
-      // Exit
-      if (supportsNativeFullscreen && document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        setIsFullscreen(false);
-        setFullscreenScale(1);
-        setIsRotated(false);
-        setNaturalSize({ width: 0, height: 0 });
-      }
-      return;
-    }
-
-    // Enter — capture natural dimensions before anything changes
-    if (!tableRef.current) return;
-    const nat = {
-      width: tableRef.current.scrollWidth,
-      height: tableRef.current.scrollHeight,
-    };
-    const rotated = isMobilePortrait();
-    setNaturalSize(nat);
-    setIsRotated(rotated);
-    setIsFullscreen(true);
-
-    if (supportsNativeFullscreen) {
-      try {
-        await fullscreenRef.current?.requestFullscreen();
-      } catch {
-        // Native fullscreen failed — simulated fullscreen already set above
-      }
-    }
-
-    setTimeout(() => calculateScale(nat.width, nat.height, rotated), 150);
-  }, [
-    isFullscreen,
-    supportsNativeFullscreen,
-    tableRef,
-    calculateScale,
-    isMobilePortrait,
-  ]);
 
   const [customShiftModal, setCustomShiftModal] =
     useState<CustomShiftModalState>({
@@ -241,41 +119,8 @@ const ScheduleTable = ({
   };
 
   return (
-    <section
-      ref={fullscreenRef}
-      className={cn(
-        "w-full",
-        isFullscreen && "bg-white flex flex-col p-4",
-        // Simulated fullscreen: fixed overlay covering the entire viewport
-        isFullscreen &&
-          !supportsNativeFullscreen &&
-          "fixed inset-0 z-9999 overflow-auto",
-        // Native fullscreen: fill the fullscreen context
-        isFullscreen && supportsNativeFullscreen && "overflow-auto",
-      )}
-    >
-      {/* Toolbar: Fullscreen + Public/Private Toggle */}
+    <section className="w-full">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <Button
-          onClick={toggleFullscreen}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          {isFullscreen ? (
-            <>
-              <Minimize className="h-4 w-4" />
-              Изход от цял екран
-            </>
-          ) : (
-            <>
-              <Maximize className="h-4 w-4" />
-              Цял екран
-            </>
-          )}
-        </Button>
-
-        {/* Public/Private Toggle Button - Only for admins */}
         {user && (
           <Button
             onClick={onTogglePublic}
@@ -301,41 +146,12 @@ const ScheduleTable = ({
       <div
         className={cn(
           "w-full relative",
-          !isFullscreen &&
-            (!isPublic && !user
-              ? "overflow-hidden min-h-[400px]"
-              : "overflow-x-auto overflow-y-hidden"),
-          isFullscreen && "overflow-hidden flex-1",
+          !isPublic && !user
+            ? "overflow-hidden min-h-[400px]"
+            : "overflow-x-auto overflow-y-hidden",
         )}
       >
-        {/* Scale wrapper - only active in fullscreen */}
-        <div
-          ref={tableWrapperRef}
-          style={
-            isFullscreen && naturalSize.width > 0
-              ? isRotated
-                ? {
-                    // Rotate 90° counter-clockwise so the table's long axis spans
-                    // the screen height (which is wider in portrait fullscreen)
-                    transform: `rotate(-90deg) scale(${fullscreenScale})`,
-                    transformOrigin: "top left",
-                    // After rotation the element's top-left moves; shift it back
-                    // so it starts at the visible top-left of the screen
-                    position: "absolute",
-                    top: `${naturalSize.width * fullscreenScale}px`,
-                    left: "0px",
-                    width: `${naturalSize.width}px`,
-                    height: `${naturalSize.height}px`,
-                  }
-                : {
-                    transform: `scale(${fullscreenScale})`,
-                    transformOrigin: "top left",
-                    width: `${naturalSize.width}px`,
-                    height: `${naturalSize.height}px`,
-                  }
-              : {}
-          }
-        >
+        <div>
           <table
             ref={tableRef}
             id="schedule-table"
