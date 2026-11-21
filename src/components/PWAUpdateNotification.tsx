@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 
 export const PWAUpdateNotification = () => {
-  const [showReload, setShowReload] = useState(false);
-
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
@@ -19,16 +16,11 @@ export const PWAUpdateNotification = () => {
     },
   });
 
-  useEffect(() => {
-    if (offlineReady || needRefresh) {
-      setShowReload(true);
-    }
-  }, [offlineReady, needRefresh]);
+  const showReload = offlineReady || needRefresh;
 
   const close = () => {
     setOfflineReady(false);
     setNeedRefresh(false);
-    setShowReload(false);
   };
 
   const handleUpdate = () => {

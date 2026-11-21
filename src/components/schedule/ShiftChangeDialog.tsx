@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,13 +32,6 @@ export function ShiftChangeDialog({
   existingMessage,
 }: ShiftChangeDialogProps) {
   const [message, setMessage] = useState(existingMessage || "");
-
-  // Update message when existingMessage changes (dialog opens with different data)
-  useEffect(() => {
-    if (isOpen) {
-      setMessage(existingMessage || "");
-    }
-  }, [isOpen, existingMessage]);
 
   const handleConfirm = () => {
     const trimmed = message.trim();

@@ -302,6 +302,7 @@ export const EmployeeRow = memo(
           })}
         </tr>
         <ShiftChangeDialog
+          key={`${shiftChangeDialog.isOpen}-${shiftChangeDialog.date}-${shiftChangeDialog.newShift}-${shiftChangeDialog.existingMessage ?? ""}`}
           isOpen={shiftChangeDialog.isOpen}
           onClose={() =>
             setShiftChangeDialog((prev) => ({ ...prev, isOpen: false }))

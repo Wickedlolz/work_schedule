@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { Schedule } from "@/lib/types";
 
 import {
@@ -44,7 +44,7 @@ export const DuplicateScheduleDialog = ({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     reset,
     formState: { isSubmitting },
@@ -58,8 +58,8 @@ export const DuplicateScheduleDialog = ({
     },
   });
 
-  const copyEmployees = watch("copyEmployees");
-  const newName = watch("newName");
+  const copyEmployees = useWatch({ control, name: "copyEmployees" });
+  const newName = useWatch({ control, name: "newName" }) || "";
 
   // Reset form when dialog closes
   useEffect(() => {

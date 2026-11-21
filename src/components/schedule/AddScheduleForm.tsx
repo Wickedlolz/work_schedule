@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Plus, Check, X } from "lucide-react";
@@ -18,7 +18,7 @@ export const AddScheduleForm = ({ onAddSchedule }: AddScheduleFormProps) => {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { isSubmitting },
   } = useForm<AddScheduleFormData>({
     defaultValues: {
@@ -26,7 +26,7 @@ export const AddScheduleForm = ({ onAddSchedule }: AddScheduleFormProps) => {
     },
   });
 
-  const scheduleName = watch("scheduleName");
+  const scheduleName = useWatch({ control, name: "scheduleName" }) || "";
 
   const onSubmit = async (data: AddScheduleFormData) => {
     try {

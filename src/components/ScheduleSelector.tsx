@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { Schedule } from "@/lib/types";
 import { MESSAGES, MIN_SCHEDULES } from "@/lib/constants";
 
@@ -55,7 +55,7 @@ const ScheduleSelector = ({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { isSubmitting },
   } = useForm<{ scheduleName: string }>({
     defaultValues: {
@@ -63,7 +63,7 @@ const ScheduleSelector = ({
     },
   });
 
-  const scheduleName = watch("scheduleName");
+  const scheduleName = useWatch({ control, name: "scheduleName" }) || "";
   const activeSchedule = schedules.find((s) => s.id === activeScheduleId);
 
   const onSubmitRename = async (data: { scheduleName: string }) => {

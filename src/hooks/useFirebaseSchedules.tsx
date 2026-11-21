@@ -331,7 +331,7 @@ export function useFirebaseSchedules(): UseFirebaseSchedulesReturn {
         if (emp.id === employeeId) {
           const hadShift = hadPreviousShift(emp, date);
 
-          const updatedEmployee: any = {
+          const updatedEmployee: Employee = {
             ...emp,
             shifts: { ...emp.shifts, [date]: shift },
             // Only increment change count if we're modifying an existing shift

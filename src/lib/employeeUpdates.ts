@@ -16,7 +16,8 @@ export const deleteShiftMessage = (
   date: string,
 ): Record<string, string> | undefined => {
   if (employee.shiftMessages && employee.shiftMessages[date]) {
-    const { [date]: _, ...remainingMessages } = employee.shiftMessages;
+    const remainingMessages = { ...employee.shiftMessages };
+    delete remainingMessages[date];
     return remainingMessages;
   }
   return employee.shiftMessages;

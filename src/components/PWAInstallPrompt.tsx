@@ -10,7 +10,15 @@ interface BeforeInstallPromptEvent extends Event {
 export const PWAInstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      return false;
+    }
+
+    return localStorage.getItem("pwa-install-dismissed") !== "true";
+  });
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -20,11 +28,6 @@ export const PWAInstallPrompt = () => {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-
-    // Check if app is already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setShowPrompt(false);
-    }
 
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
@@ -45,14 +48,6 @@ export const PWAInstallPrompt = () => {
     setShowPrompt(false);
     localStorage.setItem("pwa-install-dismissed", "true");
   };
-
-  // Don't show if user dismissed it before
-  useEffect(() => {
-    const dismissed = localStorage.getItem("pwa-install-dismissed");
-    if (dismissed) {
-      setShowPrompt(false);
-    }
-  }, []);
 
   if (!showPrompt || !deferredPrompt) return null;
 
