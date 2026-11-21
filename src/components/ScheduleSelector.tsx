@@ -31,7 +31,7 @@ interface ScheduleSelectorProps {
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ) => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -82,7 +82,8 @@ const ScheduleSelector = ({
 
     if (schedules.length <= MIN_SCHEDULES) {
       toast.error(
-        "Неуспешно изтриване на график: Минимален брой графици " + MIN_SCHEDULES
+        "Неуспешно изтриване на график: Минимален брой графици " +
+          MIN_SCHEDULES,
       );
       return;
     }
@@ -108,7 +109,7 @@ const ScheduleSelector = ({
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ) => {
     if (!activeScheduleId) return;
 
@@ -119,7 +120,7 @@ const ScheduleSelector = ({
         targetMonth,
         targetYear,
         copyEmployees,
-        copyShifts
+        copyShifts,
       );
       setShowDuplicateDialog(false);
       toast.success("Графикът е дублиран успешно!");

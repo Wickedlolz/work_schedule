@@ -31,7 +31,7 @@ interface DuplicateScheduleDialogProps {
     targetMonth: number,
     targetYear: number,
     copyEmployees: boolean,
-    copyShifts: boolean
+    copyShifts: boolean,
   ) => Promise<void>;
 }
 
@@ -84,7 +84,7 @@ export const DuplicateScheduleDialog = ({
         data.targetMonth,
         data.targetYear,
         data.copyEmployees,
-        data.copyShifts
+        data.copyShifts,
       );
       reset();
       onOpenChange(false);
